@@ -16,7 +16,7 @@ export default function HomePage() {
         }}
       >
         <Typography variant="h1" component="h1" color="primary">
-          Avamae
+          Ava Mae
         </Typography>
 
         <Typography variant="h5" component="h2" color="text.secondary" sx={{ maxWidth: '800px' }}>
@@ -29,9 +29,9 @@ export default function HomePage() {
             color="primary"
             size="large"
             component={Link}
-            href="/login"
+            href="/create-tree"
           >
-            Get Started
+            Create a Tree
           </Button>
           <Button
             variant="outlined"

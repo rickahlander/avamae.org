@@ -3,7 +3,9 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { Box } from '@mui/material';
 import { theme } from "@/styles/theme";
+import Footer from "@/components/layout/Footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -17,7 +19,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Avamae - Honoring Lives, Growing Legacies",
+  title: "Ava Mae - Honoring Lives, Growing Legacies",
   description: "A memorial tree platform that celebrates how lives continue to bless others through organ donation, healed relationships, and lasting impact.",
   keywords: ["memorial", "legacy", "organ donation", "tribute", "family tree"],
 };
@@ -33,7 +35,18 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
-            {children}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '100vh',
+              }}
+            >
+              <Box component="main" sx={{ flex: 1 }}>
+                {children}
+              </Box>
+              <Footer />
+            </Box>
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
