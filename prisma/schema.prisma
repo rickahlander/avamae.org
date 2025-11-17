@@ -1,0 +1,335 @@
+// Prisma schema for Avamae Memorial Tree Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// User & Authentication
+// ============================================================================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // hashed
+  name      String
+  avatarUrl String?  @map("avatar_url")
+  bio       String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  ownedTrees       Tree[]              @relation("TreeOwner")
+  treeMemberships  TreeMember[]
+  createdBranches  Branch[]            @relation("BranchCreator")
+  approvedBranches Branch[]            @relation("BranchApprover")
+  stories          Story[]             @relation("StoryAuthor")
+  approvedStories  Story[]             @relation("StoryApprover")
+  invitationsSent  Invitation[]        @relation("InvitationSender")
+  joinRequests     JoinRequest[]
+  connections1     MemberConnection[]  @relation("Connection1")
+  connections2     MemberConnection[]  @relation("Connection2")
+  branchMedia      BranchMedia[]
+  storyMedia       StoryMedia[]
+  joinRequestsReviewed JoinRequest[]   @relation("JoinRequestReviewer")
+
+  @@map("users")
+}
+
+// ============================================================================
+// Memorial Trees
+// ============================================================================
+
+model Tree {
+  id                 String   @id @default(uuid())
+  slug               String   @unique
+  rootPersonName     String   @map("root_person_name")
+  rootPersonPhotoUrl String?  @map("root_person_photo_url")
+  rootPersonBirthDate DateTime? @map("root_person_birth_date")
+  rootPersonDeathDate DateTime? @map("root_person_death_date")
+  rootPersonStory    String?  @map("root_person_story") @db.Text
+  visibility         Visibility @default(PUBLIC)
+  moderationMode     ModerationMode @default(MODERATED) @map("moderation_mode")
+  ownerId            String   @map("owner_id")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  settings           Json?    // Flexible settings storage
+
+  // Relations
+  owner              User              @relation("TreeOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members            TreeMember[]
+  branches           Branch[]
+  branchTypes        BranchType[]
+  stories            Story[]
+  joinRequests       JoinRequest[]
+  invitations        Invitation[]
+  memberConnections  MemberConnection[]
+
+  @@index([slug])
+  @@index([ownerId])
+  @@index([visibility])
+  @@map("trees")
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+}
+
+enum ModerationMode {
+  OPEN
+  MODERATED
+}
+
+// ============================================================================
+// Tree Membership
+// ============================================================================
+
+model TreeMember {
+  id         String       @id @default(uuid())
+  treeId     String       @map("tree_id")
+  userId     String       @map("user_id")
+  role       MemberRole   @default(VIEWER)
+  joinedAt   DateTime     @default(now()) @map("joined_at")
+  invitedBy  String?      @map("invited_by")
+
+  // Relations
+  tree       Tree         @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, userId])
+  @@index([treeId])
+  @@index([userId])
+  @@map("tree_members")
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  CONTRIBUTOR
+  VIEWER
+}
+
+// ============================================================================
+// Branch Types
+// ============================================================================
+
+model BranchType {
+  id          String   @id @default(uuid())
+  name        String
+  icon        String?
+  color       String?
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdByTreeId String? @map("created_by_tree_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  tree        Tree?    @relation(fields: [createdByTreeId], references: [id], onDelete: Cascade)
+  branches    Branch[]
+
+  @@index([isSystem])
+  @@map("branch_types")
+}
+
+// ============================================================================
+// Branches (Impact Events)
+// ============================================================================
+
+model Branch {
+  id              String    @id @default(uuid())
+  treeId          String    @map("tree_id")
+  parentBranchId  String?   @map("parent_branch_id")
+  branchTypeId    String    @map("branch_type_id")
+  title           String
+  description     String?   @db.Text
+  dateOccurred    DateTime? @map("date_occurred")
+  createdByUserId String    @map("created_by_user_id")
+  approved        Boolean   @default(false)
+  approvedBy      String?   @map("approved_by")
+  approvedAt      DateTime? @map("approved_at")
+  metadata        Json?     // Type-specific data (organ type, donation links, etc.)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tree            Tree         @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  parentBranch    Branch?      @relation("BranchHierarchy", fields: [parentBranchId], references: [id], onDelete: Cascade)
+  childBranches   Branch[]     @relation("BranchHierarchy")
+  branchType      BranchType   @relation(fields: [branchTypeId], references: [id])
+  createdBy       User         @relation("BranchCreator", fields: [createdByUserId], references: [id])
+  approver        User?        @relation("BranchApprover", fields: [approvedBy], references: [id])
+  media           BranchMedia[]
+  stories         Story[]
+
+  @@index([treeId])
+  @@index([parentBranchId])
+  @@index([branchTypeId])
+  @@index([approved])
+  @@map("branches")
+}
+
+// ============================================================================
+// Branch Media
+// ============================================================================
+
+model BranchMedia {
+  id         String    @id @default(uuid())
+  branchId   String    @map("branch_id")
+  mediaType  MediaType @map("media_type")
+  url        String
+  caption    String?
+  uploadedBy String    @map("uploaded_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  branch     Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  uploader   User      @relation(fields: [uploadedBy], references: [id])
+
+  @@index([branchId])
+  @@map("branch_media")
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+// ============================================================================
+// Stories & Memories
+// ============================================================================
+
+model Story {
+  id         String    @id @default(uuid())
+  treeId     String    @map("tree_id")
+  branchId   String?   @map("branch_id") // null = story about root person
+  title      String
+  content    String    @db.Text
+  authorId   String    @map("author_id")
+  approved   Boolean   @default(false)
+  approvedBy String?   @map("approved_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  tree       Tree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  branch     Branch?   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  author     User      @relation("StoryAuthor", fields: [authorId], references: [id])
+  approver   User?     @relation("StoryApprover", fields: [approvedBy], references: [id])
+  media      StoryMedia[]
+
+  @@index([treeId])
+  @@index([branchId])
+  @@index([approved])
+  @@map("stories")
+}
+
+// ============================================================================
+// Story Media
+// ============================================================================
+
+model StoryMedia {
+  id        String    @id @default(uuid())
+  storyId   String    @map("story_id")
+  mediaType MediaType @map("media_type")
+  url       String
+  caption   String?
+  uploadedBy String   @map("uploaded_by")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  story     Story     @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  uploader  User      @relation(fields: [uploadedBy], references: [id])
+
+  @@index([storyId])
+  @@map("story_media")
+}
+
+// ============================================================================
+// Member Connections
+// ============================================================================
+
+model MemberConnection {
+  id        String            @id @default(uuid())
+  treeId    String            @map("tree_id")
+  userId1   String            @map("user_id_1")
+  userId2   String            @map("user_id_2")
+  status    ConnectionStatus  @default(PENDING)
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  tree      Tree              @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user1     User              @relation("Connection1", fields: [userId1], references: [id], onDelete: Cascade)
+  user2     User              @relation("Connection2", fields: [userId2], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, userId1, userId2])
+  @@index([treeId])
+  @@map("member_connections")
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+}
+
+// ============================================================================
+// Join Requests (for public trees)
+// ============================================================================
+
+model JoinRequest {
+  id         String            @id @default(uuid())
+  treeId     String            @map("tree_id")
+  userId     String            @map("user_id")
+  message    String?           @db.Text
+  status     RequestStatus     @default(PENDING)
+  reviewedBy String?           @map("reviewed_by")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  tree       Tree              @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewer   User?             @relation("JoinRequestReviewer", fields: [reviewedBy], references: [id])
+
+  @@unique([treeId, userId])
+  @@index([treeId])
+  @@index([status])
+  @@map("join_requests")
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ============================================================================
+// Invitations
+// ============================================================================
+
+model Invitation {
+  id         String    @id @default(uuid())
+  treeId     String    @map("tree_id")
+  email      String
+  role       MemberRole @default(CONTRIBUTOR)
+  invitedBy  String    @map("invited_by")
+  token      String    @unique
+  expiresAt  DateTime  @map("expires_at")
+  acceptedAt DateTime? @map("accepted_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tree       Tree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  inviter    User      @relation("InvitationSender", fields: [invitedBy], references: [id])
+
+  @@index([treeId])
+  @@index([token])
+  @@index([email])
+  @@map("invitations")
+}
