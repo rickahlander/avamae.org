@@ -10,9 +10,12 @@ import {
   Paper,
   Alert,
   CircularProgress,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
-import { ArrowBack, Add } from '@mui/icons-material';
+import { ArrowBack, Add, AccountTree, Park } from '@mui/icons-material';
 import TreeVisualization from '@/components/tree/TreeVisualization';
+import IllustrativeTree from '@/components/tree/IllustrativeTree';
 
 interface TreeData {
   id: string;
@@ -31,6 +34,7 @@ export default function TreeViewPage() {
   const [tree, setTree] = useState<TreeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState<'graph' | 'tree'>('graph');
 
   useEffect(() => {
     // Load tree from localStorage
@@ -100,6 +104,29 @@ export default function TreeViewPage() {
         <Typography variant="body1" color="text.secondary">
           A living legacy of impact and blessing
         </Typography>
+
+        {/* View Toggle */}
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, newView) => newView && setViewMode(newView)}
+            aria-label="view mode"
+            sx={{
+              bgcolor: 'background.paper',
+              boxShadow: 1,
+            }}
+          >
+            <ToggleButton value="graph" aria-label="graph view">
+              <AccountTree sx={{ mr: 1 }} />
+              Graph View
+            </ToggleButton>
+            <ToggleButton value="tree" aria-label="tree view">
+              <Park sx={{ mr: 1 }} />
+              Tree View
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
       </Box>
 
       {/* Tree Visualization */}
@@ -112,7 +139,11 @@ export default function TreeViewPage() {
           mb: 4,
         }}
       >
-        <TreeVisualization tree={tree} />
+        {viewMode === 'graph' ? (
+          <TreeVisualization tree={tree} />
+        ) : (
+          <IllustrativeTree tree={tree} />
+        )}
       </Paper>
 
       {/* Info Box */}
