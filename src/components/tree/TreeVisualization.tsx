@@ -40,36 +40,36 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
 
   return (
     <Box
-      data-branch-id={branch.id}
       sx={{
         display: 'flex',
         alignItems: 'flex-start',
-        gap: 3,
-        my: 1.5,
+        gap: 2,
+        my: 0.5,
       }}
     >
       {/* Branch card */}
       <Paper
-        elevation={2}
+        data-branch-id={branch.id}
+        elevation={1}
         sx={{
-          p: 2,
-          borderRadius: 3,
-          minWidth: '220px',
-          maxWidth: '220px',
-          border: '2px solid #8FBC8F',
+          p: 1.5,
+          borderRadius: 2,
+          minWidth: '180px',
+          maxWidth: '180px',
+          border: '1.5px solid #8FBC8F',
           bgcolor: 'background.paper',
           flexShrink: 0,
           transition: 'all 0.3s ease',
           '&:hover': {
             transform: 'translateX(4px)',
-            boxShadow: 4,
+            boxShadow: 3,
             borderColor: '#6FA76F',
           },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Favorite sx={{ color: '#FF7F50', fontSize: '1.2rem' }} />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Favorite sx={{ color: '#FF7F50', fontSize: '0.9rem' }} />
             <Chip
               label={branch.type.replace(/_/g, ' ')}
               size="small"
@@ -77,7 +77,8 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
                 bgcolor: '#8FBC8F',
                 color: 'white',
                 fontWeight: 500,
-                fontSize: '0.7rem',
+                fontSize: '0.65rem',
+                height: '18px',
               }}
             />
           </Box>
@@ -89,19 +90,19 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
               sx={{
                 bgcolor: 'secondary.main',
                 color: 'white',
-                width: 24,
-                height: 24,
+                width: 20,
+                height: 20,
                 '&:hover': {
                   bgcolor: 'secondary.dark',
                 },
               }}
             >
-              <Add sx={{ fontSize: '1rem' }} />
+              <Add sx={{ fontSize: '0.85rem' }} />
             </IconButton>
           </Tooltip>
         </Box>
 
-        <Typography variant="body1" fontWeight={600} gutterBottom>
+        <Typography variant="body2" fontWeight={600} gutterBottom sx={{ fontSize: '0.875rem' }}>
           {branch.title}
         </Typography>
 
@@ -111,10 +112,11 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
             color="text.secondary"
             sx={{
               display: '-webkit-box',
-              WebkitLineClamp: 2,
+              WebkitLineClamp: 1,
               WebkitBoxOrient: 'vertical',
               overflow: 'hidden',
-              mb: 1,
+              mb: 0.5,
+              fontSize: '0.7rem',
             }}
           >
             {branch.description}
@@ -122,7 +124,7 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
         )}
 
         {branch.dateOccurred && (
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.7rem' }}>
             {new Date(branch.dateOccurred).toLocaleDateString()}
           </Typography>
         )}
@@ -131,7 +133,7 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
           <Chip
             label={`${childBranches.length} sub-${childBranches.length === 1 ? 'branch' : 'branches'}`}
             size="small"
-            sx={{ mt: 1, fontSize: '0.65rem' }}
+            sx={{ mt: 0.5, fontSize: '0.6rem', height: '16px' }}
           />
         )}
       </Paper>
@@ -142,7 +144,7 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 1.5,
+            gap: 0.5,
           }}
         >
           {childBranches.map((childBranch) => (
@@ -272,11 +274,11 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
       ref={containerRef}
       sx={{
         width: '100%',
-        minHeight: '500px',
+        minHeight: '400px',
         display: 'flex',
         alignItems: 'center',
-        py: 4,
-        px: 3,
+        py: 2,
+        px: 2,
         position: 'relative',
         overflowX: 'auto',
       }}
@@ -302,7 +304,7 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
         sx={{
           display: 'flex',
           alignItems: 'flex-start',
-          gap: 4,
+          gap: 2.5,
           zIndex: 2,
         }}
       >
@@ -312,15 +314,15 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 2,
+            gap: 1.5,
             flexShrink: 0,
           }}
         >
           {/* Trunk visual (horizontal now) */}
           <Box
             sx={{
-              width: '60px',
-              height: '4px',
+              width: '40px',
+              height: '3px',
               background: 'linear-gradient(to right, #8B7355, #6F5A40)',
               borderRadius: '2px',
             }}
@@ -329,35 +331,35 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
           {/* Root Person Card */}
           <Paper
             ref={rootCardRef}
-            elevation={4}
+            elevation={3}
             sx={{
-              p: 3,
-              borderRadius: 4,
+              p: 2,
+              borderRadius: 3,
               background: 'linear-gradient(135deg, #D4AF37 0%, #B8962D 100%)',
               color: 'white',
-              minWidth: '280px',
-              maxWidth: '280px',
+              minWidth: '200px',
+              maxWidth: '200px',
               textAlign: 'center',
             }}
           >
             <Avatar
               sx={{
-                width: 80,
-                height: 80,
-                margin: '0 auto 12px',
+                width: 60,
+                height: 60,
+                margin: '0 auto 8px',
                 bgcolor: 'rgba(255,255,255,0.2)',
-                fontSize: '2.5rem',
+                fontSize: '2rem',
               }}
             >
-              <AccountCircle sx={{ fontSize: '3rem' }} />
+              <AccountCircle sx={{ fontSize: '2.5rem' }} />
             </Avatar>
 
-            <Typography variant="h5" component="h2" gutterBottom fontWeight={600}>
+            <Typography variant="h6" component="h2" gutterBottom fontWeight={600} sx={{ fontSize: '1rem' }}>
               {tree.rootPersonName}
             </Typography>
 
             {(tree.rootPersonBirthDate || tree.rootPersonDeathDate) && (
-              <Typography variant="body2" sx={{ opacity: 0.9, mb: 1 }}>
+              <Typography variant="caption" sx={{ opacity: 0.9, mb: 0.5, fontSize: '0.7rem' }}>
                 {tree.rootPersonBirthDate && new Date(tree.rootPersonBirthDate).getFullYear()}
                 {' - '}
                 {tree.rootPersonDeathDate && new Date(tree.rootPersonDeathDate).getFullYear()}
@@ -368,13 +370,14 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
               <Typography
                 variant="caption"
                 sx={{
-                  mt: 1,
-                  p: 1.5,
+                  mt: 0.5,
+                  p: 1,
                   bgcolor: 'rgba(255,255,255,0.15)',
-                  borderRadius: 2,
+                  borderRadius: 1.5,
                   display: 'block',
-                  maxHeight: '80px',
+                  maxHeight: '60px',
                   overflow: 'auto',
+                  fontSize: '0.65rem',
                 }}
               >
                 {tree.rootPersonStory}
