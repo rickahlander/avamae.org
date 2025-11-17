@@ -232,13 +232,18 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
           const parentX = parentRect.left - containerRect.left + parentRect.width / 2;
           const parentY = parentRect.bottom - containerRect.top;
 
-          // Draw path from parent bottom to child top
-          const midY = parentY + (childY - parentY) / 2;
+          // Use curved path for more organic look and clearer connections
+          // Control points create a smooth S-curve from parent to child
+          const verticalGap = childY - parentY;
+          const controlPointOffset = Math.min(verticalGap * 0.4, 40);
+
+          const cp1Y = parentY + controlPointOffset;
+          const cp2Y = childY - controlPointOffset;
 
           paths.push(
             <path
               key={`${branch.parentBranchId}-${branch.id}`}
-              d={`M ${parentX} ${parentY} L ${parentX} ${midY} L ${childX} ${midY} L ${childX} ${childY}`}
+              d={`M ${parentX} ${parentY} C ${parentX} ${cp1Y}, ${childX} ${cp2Y}, ${childX} ${childY}`}
               stroke="#8FBC8F"
               strokeWidth="2"
               fill="none"
@@ -259,12 +264,18 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
         const branchRect = branchElement.getBoundingClientRect();
         const branchX = branchRect.left - containerRect.left + branchRect.width / 2;
         const branchY = branchRect.top - containerRect.top;
-        const midY = rootY + (branchY - rootY) / 2;
+
+        // Use curved path for root connections too
+        const verticalGap = branchY - rootY;
+        const controlPointOffset = Math.min(verticalGap * 0.4, 40);
+
+        const cp1Y = rootY + controlPointOffset;
+        const cp2Y = branchY - controlPointOffset;
 
         paths.push(
           <path
             key={`root-${branch.id}`}
-            d={`M ${rootX} ${rootY} L ${rootX} ${midY} L ${branchX} ${midY} L ${branchX} ${branchY}`}
+            d={`M ${rootX} ${rootY} C ${rootX} ${cp1Y}, ${branchX} ${cp2Y}, ${branchX} ${branchY}`}
             stroke="#8FBC8F"
             strokeWidth="2"
             fill="none"
