@@ -3,7 +3,7 @@
 import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip } from '@mui/material';
 import { Favorite, AccountCircle, Add } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 interface Branch {
   id: string;
@@ -33,24 +33,14 @@ interface BranchCardProps {
   level: number;
   index: number;
   allBranches: Branch[];
-  onRegisterPosition?: (branchId: string, position: DOMRect) => void;
 }
 
-function BranchCard({ branch, treeId, level, index, allBranches, onRegisterPosition }: BranchCardProps) {
+function BranchCard({ branch, treeId, level, index, allBranches }: BranchCardProps) {
   const router = useRouter();
-  const cardRef = useRef<HTMLDivElement>(null);
   const childBranches = allBranches.filter((b) => b.parentBranchId === branch.id);
-
-  useEffect(() => {
-    if (cardRef.current && onRegisterPosition) {
-      const rect = cardRef.current.getBoundingClientRect();
-      onRegisterPosition(branch.id, rect);
-    }
-  }, [branch.id, onRegisterPosition]);
 
   return (
     <Box
-      ref={cardRef}
       data-branch-id={branch.id}
       sx={{
         position: 'relative',
@@ -67,7 +57,6 @@ function BranchCard({ branch, treeId, level, index, allBranches, onRegisterPosit
         },
       }}
     >
-
       {/* Branch card */}
       <Paper
         elevation={2}
@@ -175,7 +164,6 @@ function BranchCard({ branch, treeId, level, index, allBranches, onRegisterPosit
               level={level + 1}
               index={childIndex}
               allBranches={allBranches}
-              onRegisterPosition={onRegisterPosition}
             />
           ))}
         </Box>
@@ -188,74 +176,61 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const rootCardRef = useRef<HTMLDivElement>(null);
-  const [branchPositions, setBranchPositions] = useState<Map<string, DOMRect>>(new Map());
-  const [containerOffset, setContainerOffset] = useState({ x: 0, y: 0 });
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [, setUpdateTrigger] = useState(0);
   const branches = tree.branches || [];
 
   // Get only root-level branches (no parent or parent is null)
   const rootBranches = branches.filter((b) => !b.parentBranchId);
 
-  // Register branch positions for drawing connections
-  const registerBranchPosition = (branchId: string, position: DOMRect) => {
-    setBranchPositions((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(branchId, position);
-      return newMap;
-    });
-  };
+  // Force re-render to update connections
+  const forceUpdate = useCallback(() => {
+    setUpdateTrigger(prev => prev + 1);
+  }, []);
 
-  // Update container offset for relative positioning
+  // Update connections after render and on resize
   useEffect(() => {
-    const updateOffset = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerOffset({ x: rect.left, y: rect.top });
-      }
+    const updateConnections = () => {
+      // Small delay to ensure DOM is fully rendered
+      setTimeout(forceUpdate, 100);
     };
 
-    updateOffset();
-
-    // Recalculate on window resize
-    window.addEventListener('resize', updateOffset);
-
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(updateOffset, 100);
+    updateConnections();
+    window.addEventListener('resize', updateConnections);
 
     return () => {
-      window.removeEventListener('resize', updateOffset);
-      clearTimeout(timer);
+      window.removeEventListener('resize', updateConnections);
     };
-  }, [branches.length]);
+  }, [branches.length, forceUpdate]);
 
-  // Trigger position recalculation when branches change
+  // Additional update after animations complete
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Force re-render to update connections
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerOffset({ x: rect.left, y: rect.top });
-      }
-    }, 300); // Wait for animations to complete
-
+    const timer = setTimeout(forceUpdate, 700); // After all animations
     return () => clearTimeout(timer);
-  }, [branchPositions.size]);
+  }, [branches.length, forceUpdate]);
 
   // Draw connection lines using SVG
   const drawConnections = () => {
+    if (!containerRef.current || !rootCardRef.current) return null;
+
     const paths: JSX.Element[] = [];
+    const containerRect = containerRef.current.getBoundingClientRect();
 
     // Build parent-child relationships
     branches.forEach((branch) => {
       if (branch.parentBranchId) {
-        const childPos = branchPositions.get(branch.id);
-        const parentPos = branchPositions.get(branch.parentBranchId);
+        const childElement = containerRef.current?.querySelector(`[data-branch-id="${branch.id}"]`) as HTMLElement;
+        const parentElement = containerRef.current?.querySelector(`[data-branch-id="${branch.parentBranchId}"]`) as HTMLElement;
 
-        if (childPos && parentPos) {
+        if (childElement && parentElement) {
+          const childRect = childElement.getBoundingClientRect();
+          const parentRect = parentElement.getBoundingClientRect();
+
           // Calculate positions relative to container
-          const childX = childPos.left - containerOffset.x + childPos.width / 2;
-          const childY = childPos.top - containerOffset.y;
-          const parentX = parentPos.left - containerOffset.x + parentPos.width / 2;
-          const parentY = parentPos.bottom - containerOffset.y;
+          const childX = childRect.left - containerRect.left + childRect.width / 2;
+          const childY = childRect.top - containerRect.top;
+          const parentX = parentRect.left - containerRect.left + parentRect.width / 2;
+          const parentY = parentRect.bottom - containerRect.top;
 
           // Draw path from parent bottom to child top
           const midY = parentY + (childY - parentY) / 2;
@@ -274,30 +249,29 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
     });
 
     // Draw connections from root card to root branches
-    if (rootCardRef.current) {
-      const rootPos = rootCardRef.current.getBoundingClientRect();
-      const rootX = rootPos.left - containerOffset.x + rootPos.width / 2;
-      const rootY = rootPos.bottom - containerOffset.y;
+    const rootRect = rootCardRef.current.getBoundingClientRect();
+    const rootX = rootRect.left - containerRect.left + rootRect.width / 2;
+    const rootY = rootRect.bottom - containerRect.top;
 
-      rootBranches.forEach((branch) => {
-        const branchPos = branchPositions.get(branch.id);
-        if (branchPos) {
-          const branchX = branchPos.left - containerOffset.x + branchPos.width / 2;
-          const branchY = branchPos.top - containerOffset.y;
-          const midY = rootY + (branchY - rootY) / 2;
+    rootBranches.forEach((branch) => {
+      const branchElement = containerRef.current?.querySelector(`[data-branch-id="${branch.id}"]`) as HTMLElement;
+      if (branchElement) {
+        const branchRect = branchElement.getBoundingClientRect();
+        const branchX = branchRect.left - containerRect.left + branchRect.width / 2;
+        const branchY = branchRect.top - containerRect.top;
+        const midY = rootY + (branchY - rootY) / 2;
 
-          paths.push(
-            <path
-              key={`root-${branch.id}`}
-              d={`M ${rootX} ${rootY} L ${rootX} ${midY} L ${branchX} ${midY} L ${branchX} ${branchY}`}
-              stroke="#8FBC8F"
-              strokeWidth="2"
-              fill="none"
-            />
-          );
-        }
-      });
-    }
+        paths.push(
+          <path
+            key={`root-${branch.id}`}
+            d={`M ${rootX} ${rootY} L ${rootX} ${midY} L ${branchX} ${midY} L ${branchX} ${branchY}`}
+            stroke="#8FBC8F"
+            strokeWidth="2"
+            fill="none"
+          />
+        );
+      }
+    });
 
     return paths;
   };
@@ -317,6 +291,7 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
     >
       {/* SVG overlay for connection lines */}
       <svg
+        ref={svgRef}
         style={{
           position: 'absolute',
           top: 0,
@@ -329,6 +304,7 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
       >
         {drawConnections()}
       </svg>
+
       {/* Root/Trunk - The Person */}
       <Box
         sx={{
@@ -425,7 +401,6 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
               level={0}
               index={index}
               allBranches={branches}
-              onRegisterPosition={registerBranchPosition}
             />
           ))}
         </Box>
