@@ -11,8 +11,9 @@ import {
   Paper,
   Stack,
   Alert,
+  IconButton,
 } from '@mui/material';
-import { ArrowBack, Settings } from '@mui/icons-material';
+import { ArrowBack, Settings, PhotoCamera, Delete } from '@mui/icons-material';
 
 export default function EditTreePage() {
   const params = useParams();
@@ -25,6 +26,7 @@ export default function EditTreePage() {
     rootPersonDeathDate: '',
     rootPersonStory: '',
   });
+  const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -39,6 +41,7 @@ export default function EditTreePage() {
         rootPersonDeathDate: tree.rootPersonDeathDate || '',
         rootPersonStory: tree.rootPersonStory || '',
       });
+      setPhotos(tree.rootPersonPhotos || []);
     }
     setLoading(false);
   }, [treeId]);
@@ -48,6 +51,28 @@ export default function EditTreePage() {
       ...prev,
       [field]: e.target.value
     }));
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError('Photo size must be less than 5MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotos(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,6 +100,7 @@ export default function EditTreePage() {
     tree.rootPersonBirthDate = formData.rootPersonBirthDate;
     tree.rootPersonDeathDate = formData.rootPersonDeathDate;
     tree.rootPersonStory = formData.rootPersonStory;
+    tree.rootPersonPhotos = photos;
     tree.updatedAt = new Date().toISOString();
 
     // Save updated tree
@@ -174,6 +200,74 @@ export default function EditTreePage() {
               helperText="Share the story of this person's life and legacy"
               variant="outlined"
             />
+
+            {/* Photo Upload */}
+            <Box>
+              <Typography variant="body2" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
+                Photos (optional)
+              </Typography>
+
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<PhotoCamera />}
+                sx={{ mb: 2 }}
+              >
+                Upload Photos
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                />
+              </Button>
+
+              {photos.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {photos.map((photo, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        position: 'relative',
+                        width: 120,
+                        height: 120,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        border: '2px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <img
+                        src={photo}
+                        alt={`Upload ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemovePhoto(index)}
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'rgba(0,0,0,0.6)',
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: 'rgba(0,0,0,0.8)',
+                          },
+                        }}
+                      >
+                        <Delete sx={{ fontSize: '1rem' }} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
 
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
               <Button

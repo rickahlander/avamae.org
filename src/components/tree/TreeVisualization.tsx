@@ -21,6 +21,7 @@ interface TreeData {
   rootPersonBirthDate?: string;
   rootPersonDeathDate?: string;
   rootPersonStory?: string;
+  rootPersonPhotos?: string[];
   branches?: Branch[];
 }
 
@@ -473,6 +474,53 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
               >
                 {tree.rootPersonStory}
               </Typography>
+            )}
+
+            {/* Photo thumbnails */}
+            {tree.rootPersonPhotos && tree.rootPersonPhotos.length > 0 && (
+              <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+                {tree.rootPersonPhotos.slice(0, 3).map((photo, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      border: '2px solid rgba(255,255,255,0.3)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <img
+                      src={photo}
+                      alt={`${tree.rootPersonName} photo ${index + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                  </Box>
+                ))}
+                {tree.rootPersonPhotos.length > 3 && (
+                  <Box
+                    sx={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      color: 'white',
+                    }}
+                  >
+                    +{tree.rootPersonPhotos.length - 3}
+                  </Box>
+                )}
+              </Box>
             )}
           </Paper>
         </Box>
