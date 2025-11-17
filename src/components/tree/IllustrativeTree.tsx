@@ -70,7 +70,7 @@ export default function IllustrativeTree({ tree }: IllustrativeTreeProps) {
     });
   };
 
-  const positionedNodes = positionNodes(treeNodes, 400, 250, 600);
+  const positionedNodes = positionNodes(treeNodes, 400, 180, 600);
 
   // Flatten nodes for rendering
   const flattenNodes = (nodes: TreeNode[]): TreeNode[] => {
@@ -85,9 +85,31 @@ export default function IllustrativeTree({ tree }: IllustrativeTreeProps) {
   const renderBranches = () => {
     const lines: JSX.Element[] = [];
 
+    // Connect first-level branches to top of trunk
+    positionedNodes.forEach((node) => {
+      const trunkTopY = 250; // Top of trunk
+      const trunkCenterX = 400;
+      const midY = (trunkTopY + node.y) / 2;
+
+      // Curved branch from trunk to first node
+      const path = `M ${trunkCenterX} ${trunkTopY} Q ${trunkCenterX} ${midY}, ${node.x} ${node.y}`;
+
+      lines.push(
+        <path
+          key={`trunk-${node.branch.id}`}
+          d={path}
+          stroke="#8FBC8F"
+          strokeWidth="4"
+          fill="none"
+          strokeLinecap="round"
+          opacity={0.8}
+        />
+      );
+    });
+
+    // Connect child branches to their parents
     allNodes.forEach((node) => {
       node.children.forEach((child) => {
-        // Curved branch line
         const midY = (node.y + child.y) / 2;
         const path = `M ${node.x} ${node.y} Q ${node.x} ${midY}, ${child.x} ${child.y}`;
 
@@ -112,7 +134,7 @@ export default function IllustrativeTree({ tree }: IllustrativeTreeProps) {
     <Box
       sx={{
         width: '100%',
-        minHeight: '600px',
+        minHeight: '700px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -123,11 +145,10 @@ export default function IllustrativeTree({ tree }: IllustrativeTreeProps) {
     >
       <svg
         width="100%"
-        height="800"
-        viewBox="0 0 800 800"
+        height="900"
+        viewBox="0 0 800 900"
         style={{ maxWidth: '1200px' }}
       >
-        {/* Tree trunk */}
         <defs>
           <linearGradient id="trunkGradient" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" style={{ stopColor: '#6F5A40', stopOpacity: 1 }} />
@@ -135,55 +156,116 @@ export default function IllustrativeTree({ tree }: IllustrativeTreeProps) {
             <stop offset="100%" style={{ stopColor: '#6F5A40', stopOpacity: 1 }} />
           </linearGradient>
 
-          <linearGradient id="rootGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style={{ stopColor: '#D4AF37', stopOpacity: 1 }} />
-            <stop offset="100%" style={{ stopColor: '#B8962D', stopOpacity: 1 }} />
+          <linearGradient id="rootGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop offset="0%" style={{ stopColor: '#5C4A33', stopOpacity: 1 }} />
+            <stop offset="100%" style={{ stopColor: '#8B7355', stopOpacity: 1 }} />
+          </linearGradient>
+
+          <linearGradient id="nameGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: '#D4AF37', stopOpacity: 0.95 }} />
+            <stop offset="100%" style={{ stopColor: '#B8962D', stopOpacity: 0.95 }} />
           </linearGradient>
         </defs>
 
-        {/* Trunk */}
-        <rect
-          x="380"
-          y="100"
-          width="40"
-          height="100"
-          fill="url(#trunkGradient)"
-          rx="5"
+        {/* Roots - spreading underground */}
+        <g opacity="0.6">
+          {/* Center root */}
+          <path
+            d="M 400 680 Q 400 720, 400 750"
+            stroke="#5C4A33"
+            strokeWidth="8"
+            fill="none"
+            strokeLinecap="round"
+          />
+          {/* Left roots */}
+          <path
+            d="M 395 690 Q 360 710, 330 740"
+            stroke="#5C4A33"
+            strokeWidth="6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 390 700 Q 340 720, 300 750"
+            stroke="#5C4A33"
+            strokeWidth="5"
+            fill="none"
+            strokeLinecap="round"
+          />
+          {/* Right roots */}
+          <path
+            d="M 405 690 Q 440 710, 470 740"
+            stroke="#5C4A33"
+            strokeWidth="6"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 410 700 Q 460 720, 500 750"
+            stroke="#5C4A33"
+            strokeWidth="5"
+            fill="none"
+            strokeLinecap="round"
+          />
+        </g>
+
+        {/* Ground line */}
+        <line
+          x1="250"
+          y1="680"
+          x2="550"
+          y2="680"
+          stroke="#8B7355"
+          strokeWidth="2"
+          opacity="0.3"
         />
 
-        {/* Branch connections */}
-        {renderBranches()}
+        {/* Trunk - Ava herself */}
+        <rect
+          x="360"
+          y="250"
+          width="80"
+          height="430"
+          fill="url(#trunkGradient)"
+          rx="10"
+        />
 
-        {/* Root person (at base of trunk) */}
-        <g transform="translate(400, 80)">
-          <circle
-            r="60"
-            fill="url(#rootGradient)"
-            stroke="#B8962D"
-            strokeWidth="3"
+        {/* Name plate on trunk */}
+        <g transform="translate(400, 450)">
+          <rect
+            x="-90"
+            y="-40"
+            width="180"
+            height="80"
+            fill="url(#nameGradient)"
+            rx="8"
+            opacity="0.95"
           />
           <text
-            y="8"
+            y="-8"
             textAnchor="middle"
             fill="white"
-            fontSize="14"
-            fontWeight="600"
+            fontSize="18"
+            fontWeight="700"
           >
             {tree.rootPersonName}
           </text>
           {tree.rootPersonBirthDate && tree.rootPersonDeathDate && (
             <text
-              y="25"
+              y="15"
               textAnchor="middle"
               fill="white"
-              fontSize="10"
-              opacity="0.9"
+              fontSize="13"
+              opacity="0.95"
             >
               {new Date(tree.rootPersonBirthDate).getFullYear()} -{' '}
               {new Date(tree.rootPersonDeathDate).getFullYear()}
             </text>
           )}
         </g>
+
+        {/* Branch connections - start from trunk top */}
+        {renderBranches()}
 
         {/* Branch nodes */}
         {allNodes.map((node, index) => (
