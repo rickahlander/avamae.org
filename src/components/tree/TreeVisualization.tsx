@@ -12,6 +12,7 @@ interface Branch {
   dateOccurred?: string;
   parentBranchId?: string | null;
   description?: string;
+  photos?: string[];
 }
 
 interface TreeData {
@@ -155,6 +156,54 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
             size="small"
             sx={{ mt: 0.5, fontSize: '0.6rem', height: '16px' }}
           />
+        )}
+
+        {/* Photo thumbnails */}
+        {branch.photos && branch.photos.length > 0 && (
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+            {branch.photos.slice(0, 3).map((photo, index) => (
+              <Box
+                key={index}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src={photo}
+                  alt={`${branch.title} photo ${index + 1}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
+            ))}
+            {branch.photos.length > 3 && (
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'action.hover',
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                }}
+              >
+                +{branch.photos.length - 3}
+              </Box>
+            )}
+          </Box>
         )}
       </Paper>
 

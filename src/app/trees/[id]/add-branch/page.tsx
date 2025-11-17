@@ -16,8 +16,9 @@ import {
   InputLabel,
   Select,
   Chip,
+  IconButton,
 } from '@mui/material';
-import { ArrowBack, AccountTree } from '@mui/icons-material';
+import { ArrowBack, AccountTree, PhotoCamera, Delete } from '@mui/icons-material';
 
 const BRANCH_TYPES = [
   { value: 'organ_donation', label: 'Organ Donation', icon: '❤️' },
@@ -42,6 +43,7 @@ export default function AddBranchPage() {
     description: '',
     dateOccurred: '',
   });
+  const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -67,6 +69,38 @@ export default function AddBranchPage() {
       ...prev,
       [field]: e.target.value
     }));
+  };
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    // TODO (Production): Replace with S3 upload
+    // 1. Upload to S3 using presigned URL or direct upload with AWS SDK
+    // 2. Store S3 URL in database instead of base64
+    // 3. Use CloudFront for CDN delivery
+    // 4. Implement image optimization (resize, compress) before upload
+    // 5. Add security: signed URLs with expiration for private photos
+    //
+    // Current (MVP/Local): Base64 encoding for localStorage
+    // Limitation: Max 5MB per photo, stored inline (not ideal for production)
+
+    Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit for localStorage
+        setError('Photo size must be less than 5MB');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotos(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,6 +133,7 @@ export default function AddBranchPage() {
       id: Date.now().toString(),
       ...formData,
       parentBranchId: parentBranchId || null,
+      photos: photos,
       createdAt: new Date().toISOString(),
     };
 
@@ -211,6 +246,74 @@ export default function AddBranchPage() {
               helperText="When did this impact occur?"
               variant="outlined"
             />
+
+            {/* Photo Upload */}
+            <Box>
+              <Typography variant="body2" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
+                Photos (optional)
+              </Typography>
+
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<PhotoCamera />}
+                sx={{ mb: 2 }}
+              >
+                Upload Photos
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoUpload}
+                />
+              </Button>
+
+              {photos.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  {photos.map((photo, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        position: 'relative',
+                        width: 120,
+                        height: 120,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        border: '2px solid',
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <img
+                        src={photo}
+                        alt={`Upload ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemovePhoto(index)}
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'rgba(0,0,0,0.6)',
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: 'rgba(0,0,0,0.8)',
+                          },
+                        }}
+                      >
+                        <Delete sx={{ fontSize: '1rem' }} />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
 
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
               <Button
