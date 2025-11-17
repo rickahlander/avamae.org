@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   Container,
   Typography,
@@ -15,8 +15,9 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Chip,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowBack, AccountTree } from '@mui/icons-material';
 
 const BRANCH_TYPES = [
   { value: 'organ_donation', label: 'Organ Donation', icon: '❤️' },
@@ -30,7 +31,11 @@ const BRANCH_TYPES = [
 export default function AddBranchPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const parentBranchId = searchParams.get('parentBranchId');
+
   const [treeName, setTreeName] = useState('');
+  const [parentBranchTitle, setParentBranchTitle] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     type: '',
@@ -40,14 +45,22 @@ export default function AddBranchPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Load tree to get the name
+    // Load tree to get the name and parent branch info
     const treeId = params.id as string;
     const treeData = localStorage.getItem(`tree-${treeId}`);
     if (treeData) {
       const tree = JSON.parse(treeData);
       setTreeName(tree.rootPersonName);
+
+      // If adding to a specific branch, find it
+      if (parentBranchId && tree.branches) {
+        const parentBranch = tree.branches.find((b: any) => b.id === parentBranchId);
+        if (parentBranch) {
+          setParentBranchTitle(parentBranch.title);
+        }
+      }
     }
-  }, [params.id]);
+  }, [params.id, parentBranchId]);
 
   const handleChange = (field: string) => (e: any) => {
     setFormData(prev => ({
@@ -85,6 +98,7 @@ export default function AddBranchPage() {
     const newBranch = {
       id: Date.now().toString(),
       ...formData,
+      parentBranchId: parentBranchId || null,
       createdAt: new Date().toISOString(),
     };
 
@@ -122,9 +136,24 @@ export default function AddBranchPage() {
         <Typography variant="h3" component="h1" gutterBottom color="primary">
           Add a Branch
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
           {treeName ? `Add to ${treeName}'s tree` : 'Share how this life has blessed others'}
         </Typography>
+
+        {parentBranchTitle && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+            <AccountTree color="secondary" />
+            <Typography variant="body2">
+              Adding a sub-branch to:
+            </Typography>
+            <Chip
+              label={parentBranchTitle}
+              color="secondary"
+              size="small"
+              sx={{ fontWeight: 500 }}
+            />
+          </Box>
+        )}
       </Box>
 
       <Paper elevation={2} sx={{ p: 4 }}>

@@ -1,13 +1,16 @@
 'use client';
 
-import { Box, Typography, Avatar, Chip, Paper } from '@mui/material';
-import { Favorite, AccountCircle } from '@mui/icons-material';
+import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip } from '@mui/material';
+import { Favorite, AccountCircle, Add } from '@mui/icons-material';
+import { useRouter } from 'next/navigation';
 
 interface Branch {
   id: string;
   title: string;
   type: string;
   dateOccurred?: string;
+  parentBranchId?: string | null;
+  description?: string;
 }
 
 interface TreeData {
@@ -23,8 +26,169 @@ interface TreeVisualizationProps {
   tree: TreeData;
 }
 
+interface BranchCardProps {
+  branch: Branch;
+  treeId: string;
+  level: number;
+  index: number;
+  allBranches: Branch[];
+}
+
+function BranchCard({ branch, treeId, level, index, allBranches }: BranchCardProps) {
+  const router = useRouter();
+  const childBranches = allBranches.filter((b) => b.parentBranchId === branch.id);
+
+  return (
+    <Box
+      sx={{
+        position: 'relative',
+        animation: `growBranch 0.6s ease-out ${index * 0.1}s both`,
+        '@keyframes growBranch': {
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(-20px) scale(0.8)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0) scale(1)',
+          },
+        },
+      }}
+    >
+      {/* Branch line connecting to parent */}
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          width: '2px',
+          height: level === 0 ? '40px' : '30px',
+          bgcolor: '#8FBC8F',
+          transform: 'translateX(-50%)',
+        }}
+      />
+
+      {/* Branch card */}
+      <Paper
+        elevation={2}
+        sx={{
+          p: 2,
+          borderRadius: 3,
+          minWidth: '200px',
+          maxWidth: '250px',
+          border: '2px solid #8FBC8F',
+          bgcolor: 'background.paper',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: 4,
+            borderColor: '#6FA76F',
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Favorite sx={{ color: '#FF7F50', fontSize: '1.2rem' }} />
+            <Chip
+              label={branch.type.replace(/_/g, ' ')}
+              size="small"
+              sx={{
+                bgcolor: '#8FBC8F',
+                color: 'white',
+                fontWeight: 500,
+                fontSize: '0.7rem',
+              }}
+            />
+          </Box>
+
+          <Tooltip title="Add sub-branch">
+            <IconButton
+              size="small"
+              onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
+              sx={{
+                bgcolor: 'secondary.main',
+                color: 'white',
+                width: 24,
+                height: 24,
+                '&:hover': {
+                  bgcolor: 'secondary.dark',
+                },
+              }}
+            >
+              <Add sx={{ fontSize: '1rem' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+
+        <Typography variant="body1" fontWeight={600} gutterBottom>
+          {branch.title}
+        </Typography>
+
+        {branch.description && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              mb: 1,
+            }}
+          >
+            {branch.description}
+          </Typography>
+        )}
+
+        {branch.dateOccurred && (
+          <Typography variant="caption" color="text.secondary" display="block">
+            {new Date(branch.dateOccurred).toLocaleDateString()}
+          </Typography>
+        )}
+
+        {childBranches.length > 0 && (
+          <Chip
+            label={`${childBranches.length} sub-${childBranches.length === 1 ? 'branch' : 'branches'}`}
+            size="small"
+            sx={{ mt: 1, fontSize: '0.65rem' }}
+          />
+        )}
+      </Paper>
+
+      {/* Child branches - Recursive */}
+      {childBranches.length > 0 && (
+        <Box
+          sx={{
+            mt: 3,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 3,
+            justifyContent: 'center',
+            pl: level > 0 ? 2 : 0,
+          }}
+        >
+          {childBranches.map((childBranch, childIndex) => (
+            <BranchCard
+              key={childBranch.id}
+              branch={childBranch}
+              treeId={treeId}
+              level={level + 1}
+              index={childIndex}
+              allBranches={allBranches}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+}
+
 export default function TreeVisualization({ tree }: TreeVisualizationProps) {
+  const router = useRouter();
   const branches = tree.branches || [];
+
+  // Get only root-level branches (no parent or parent is null)
+  const rootBranches = branches.filter((b) => !b.parentBranchId);
 
   return (
     <Box
@@ -112,8 +276,8 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
         </Paper>
       </Box>
 
-      {/* Branches */}
-      {branches.length > 0 && (
+      {/* Root-level Branches */}
+      {rootBranches.length > 0 && (
         <Box
           sx={{
             mt: 4,
@@ -121,82 +285,18 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
             flexWrap: 'wrap',
             gap: 3,
             justifyContent: 'center',
-            maxWidth: '900px',
+            maxWidth: '1200px',
           }}
         >
-          {branches.map((branch, index) => (
-            <Box
+          {rootBranches.map((branch, index) => (
+            <BranchCard
               key={branch.id}
-              sx={{
-                position: 'relative',
-                animation: `growBranch 0.6s ease-out ${index * 0.1}s both`,
-                '@keyframes growBranch': {
-                  '0%': {
-                    opacity: 0,
-                    transform: 'translateY(-20px) scale(0.8)',
-                  },
-                  '100%': {
-                    opacity: 1,
-                    transform: 'translateY(0) scale(1)',
-                  },
-                },
-              }}
-            >
-              {/* Branch line */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: '100%',
-                  left: '50%',
-                  width: '2px',
-                  height: '40px',
-                  bgcolor: '#8FBC8F',
-                  transform: 'translateX(-50%)',
-                }}
-              />
-
-              {/* Branch card */}
-              <Paper
-                elevation={2}
-                sx={{
-                  p: 2,
-                  borderRadius: 3,
-                  minWidth: '200px',
-                  maxWidth: '250px',
-                  border: '2px solid #8FBC8F',
-                  bgcolor: 'background.paper',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 4,
-                    borderColor: '#6FA76F',
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Favorite sx={{ color: '#FF7F50', fontSize: '1.2rem' }} />
-                  <Chip
-                    label={branch.type}
-                    size="small"
-                    sx={{
-                      bgcolor: '#8FBC8F',
-                      color: 'white',
-                      fontWeight: 500,
-                    }}
-                  />
-                </Box>
-
-                <Typography variant="body1" fontWeight={600} gutterBottom>
-                  {branch.title}
-                </Typography>
-
-                {branch.dateOccurred && (
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(branch.dateOccurred).toLocaleDateString()}
-                  </Typography>
-                )}
-              </Paper>
-            </Box>
+              branch={branch}
+              treeId={tree.id}
+              level={0}
+              index={index}
+              allBranches={branches}
+            />
           ))}
         </Box>
       )}
