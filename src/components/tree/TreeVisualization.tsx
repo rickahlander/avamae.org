@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip } from '@mui/material';
-import { Favorite, AccountCircle, Add, Edit } from '@mui/icons-material';
+import { Favorite, AccountCircle, Add, Edit, Settings } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -409,8 +409,30 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
               minWidth: '200px',
               maxWidth: '200px',
               textAlign: 'center',
+              position: 'relative',
             }}
           >
+            <Tooltip title="Edit tree">
+              <IconButton
+                size="small"
+                onClick={() => router.push(`/trees/${tree.id}/edit-tree`)}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  width: 24,
+                  height: 24,
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.3)',
+                  },
+                }}
+              >
+                <Settings sx={{ fontSize: '0.9rem' }} />
+              </IconButton>
+            </Tooltip>
+
             <Avatar
               sx={{
                 width: 60,
