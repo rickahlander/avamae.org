@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip } from '@mui/material';
-import { Favorite, AccountCircle, Add } from '@mui/icons-material';
+import { Favorite, AccountCircle, Add, Edit } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 
@@ -83,23 +83,43 @@ function BranchCard({ branch, treeId, level, allBranches }: BranchCardProps) {
             />
           </Box>
 
-          <Tooltip title="Add sub-branch">
-            <IconButton
-              size="small"
-              onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
-              sx={{
-                bgcolor: 'secondary.main',
-                color: 'white',
-                width: 20,
-                height: 20,
-                '&:hover': {
-                  bgcolor: 'secondary.dark',
-                },
-              }}
-            >
-              <Add sx={{ fontSize: '0.85rem' }} />
-            </IconButton>
-          </Tooltip>
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title="Edit branch">
+              <IconButton
+                size="small"
+                onClick={() => router.push(`/trees/${treeId}/edit-branch/${branch.id}`)}
+                sx={{
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  width: 20,
+                  height: 20,
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                }}
+              >
+                <Edit sx={{ fontSize: '0.75rem' }} />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Add sub-branch">
+              <IconButton
+                size="small"
+                onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
+                sx={{
+                  bgcolor: 'secondary.main',
+                  color: 'white',
+                  width: 20,
+                  height: 20,
+                  '&:hover': {
+                    bgcolor: 'secondary.dark',
+                  },
+                }}
+              >
+                <Add sx={{ fontSize: '0.85rem' }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
 
         <Typography variant="body2" fontWeight={600} gutterBottom sx={{ fontSize: '0.875rem' }}>
