@@ -21,6 +21,7 @@ interface TreeData {
   rootPersonBirthDate?: string;
   rootPersonDeathDate?: string;
   rootPersonStory?: string;
+  rootPersonProfilePhoto?: string;
   rootPersonPhotos?: string[];
   branches?: Branch[];
 }
@@ -435,6 +436,7 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
             </Tooltip>
 
             <Avatar
+              src={tree.rootPersonProfilePhoto}
               sx={{
                 width: 60,
                 height: 60,
@@ -443,7 +445,7 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
                 fontSize: '2rem',
               }}
             >
-              <AccountCircle sx={{ fontSize: '2.5rem' }} />
+              {!tree.rootPersonProfilePhoto && <AccountCircle sx={{ fontSize: '2.5rem' }} />}
             </Avatar>
 
             <Typography variant="h6" component="h2" gutterBottom fontWeight={600} sx={{ fontSize: '1rem' }}>

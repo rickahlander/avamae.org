@@ -26,6 +26,7 @@ export default function EditTreePage() {
     rootPersonDeathDate: '',
     rootPersonStory: '',
   });
+  const [profilePhoto, setProfilePhoto] = useState<string>('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,7 @@ export default function EditTreePage() {
         rootPersonDeathDate: tree.rootPersonDeathDate || '',
         rootPersonStory: tree.rootPersonStory || '',
       });
+      setProfilePhoto(tree.rootPersonProfilePhoto || '');
       setPhotos(tree.rootPersonPhotos || []);
     }
     setLoading(false);
@@ -89,6 +91,26 @@ export default function EditTreePage() {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(''); // Clear any previous errors
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit before compression
+      setError('Photo size must be less than 10MB');
+      return;
+    }
+
+    try {
+      const compressedPhoto = await compressImage(file);
+      setProfilePhoto(compressedPhoto);
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      setError('Failed to process image. Please try a different photo.');
+    }
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,6 +164,7 @@ export default function EditTreePage() {
     tree.rootPersonBirthDate = formData.rootPersonBirthDate;
     tree.rootPersonDeathDate = formData.rootPersonDeathDate;
     tree.rootPersonStory = formData.rootPersonStory;
+    tree.rootPersonProfilePhoto = profilePhoto;
     tree.rootPersonPhotos = photos;
     tree.updatedAt = new Date().toISOString();
 
@@ -221,6 +244,89 @@ export default function EditTreePage() {
               helperText="The name of the person this memorial tree honors"
               variant="outlined"
             />
+
+            {/* Profile Photo */}
+            <Box>
+              <Typography variant="body2" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
+                Profile Photo (optional)
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                This photo will be displayed as the main profile image in the tree
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {profilePhoto ? (
+                  <Box sx={{ position: 'relative' }}>
+                    <Box
+                      sx={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                      }}
+                    >
+                      <img
+                        src={profilePhoto}
+                        alt="Profile"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => setProfilePhoto('')}
+                      sx={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        '&:hover': {
+                          bgcolor: 'error.dark',
+                        },
+                      }}
+                    >
+                      <Delete sx={{ fontSize: '1rem' }} />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      borderRadius: 2,
+                      border: '2px dashed',
+                      borderColor: 'divider',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'background.default',
+                    }}
+                  >
+                    <PhotoCamera sx={{ fontSize: 40, color: 'text.disabled' }} />
+                  </Box>
+                )}
+
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<PhotoCamera />}
+                >
+                  {profilePhoto ? 'Change Photo' : 'Upload Photo'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleProfilePhotoUpload}
+                  />
+                </Button>
+              </Box>
+            </Box>
 
             <TextField
               label="Birth Date"
