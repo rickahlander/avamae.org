@@ -1,8 +1,10 @@
 'use client';
 
-import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip } from '@mui/material';
-import { Favorite, AccountCircle, Add } from '@mui/icons-material';
+import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
+import { AccountCircle, Add, Edit, Settings, Delete, HelpOutline } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { getBranchTypeConfig } from '@/constants/branchTypes';
 
 interface Branch {
   id: string;
@@ -11,6 +13,7 @@ interface Branch {
   dateOccurred?: string;
   parentBranchId?: string | null;
   description?: string;
+  photos?: string[];
 }
 
 interface TreeData {
@@ -19,6 +22,8 @@ interface TreeData {
   rootPersonBirthDate?: string;
   rootPersonDeathDate?: string;
   rootPersonStory?: string;
+  rootPersonProfilePhoto?: string;
+  rootPersonPhotos?: string[];
   branches?: Branch[];
 }
 
@@ -30,97 +35,78 @@ interface BranchCardProps {
   branch: Branch;
   treeId: string;
   level: number;
-  index: number;
   allBranches: Branch[];
+  onDelete: (branchId: string) => void;
 }
 
-function BranchCard({ branch, treeId, level, index, allBranches }: BranchCardProps) {
+function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCardProps) {
   const router = useRouter();
   const childBranches = allBranches.filter((b) => b.parentBranchId === branch.id);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Get the correct icon for this branch type
+  const branchConfig = getBranchTypeConfig(branch.type);
+  const BranchIcon = branchConfig?.icon || HelpOutline;
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    onDelete(branch.id);
+    setShowDeleteDialog(false);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
+  };
 
   return (
     <Box
       sx={{
-        position: 'relative',
-        animation: `growBranch 0.6s ease-out ${index * 0.1}s both`,
-        '@keyframes growBranch': {
-          '0%': {
-            opacity: 0,
-            transform: 'translateY(-20px) scale(0.8)',
-          },
-          '100%': {
-            opacity: 1,
-            transform: 'translateY(0) scale(1)',
-          },
-        },
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 2,
+        my: 0.5,
       }}
     >
-      {/* Branch line connecting to parent */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: '100%',
-          left: '50%',
-          width: '2px',
-          height: level === 0 ? '40px' : '30px',
-          bgcolor: '#8FBC8F',
-          transform: 'translateX(-50%)',
-        }}
-      />
-
       {/* Branch card */}
       <Paper
-        elevation={2}
+        data-branch-id={branch.id}
+        elevation={1}
         sx={{
           p: 2,
-          borderRadius: 3,
-          minWidth: '200px',
-          maxWidth: '250px',
-          border: '2px solid #8FBC8F',
+          borderRadius: 2,
+          minWidth: level === 0 ? '220px' : '180px',
+          maxWidth: level === 0 ? '220px' : '180px',
+          border: '1.5px solid #8FBC8F',
           bgcolor: 'background.paper',
+          flexShrink: 0,
           transition: 'all 0.3s ease',
           '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: 4,
+            transform: level === 0 ? 'translateY(-4px)' : 'translateX(4px)',
+            boxShadow: 3,
             borderColor: '#6FA76F',
           },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Favorite sx={{ color: '#FF7F50', fontSize: '1.2rem' }} />
-            <Chip
-              label={branch.type.replace(/_/g, ' ')}
-              size="small"
-              sx={{
-                bgcolor: '#8FBC8F',
-                color: 'white',
-                fontWeight: 500,
-                fontSize: '0.7rem',
-              }}
-            />
-          </Box>
-
-          <Tooltip title="Add sub-branch">
-            <IconButton
-              size="small"
-              onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
-              sx={{
-                bgcolor: 'secondary.main',
-                color: 'white',
-                width: 24,
-                height: 24,
-                '&:hover': {
-                  bgcolor: 'secondary.dark',
-                },
-              }}
-            >
-              <Add sx={{ fontSize: '1rem' }} />
-            </IconButton>
-          </Tooltip>
+        {/* Branch Type Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+          <BranchIcon sx={{ color: '#FF7F50', fontSize: '0.9rem' }} />
+          <Chip
+            label={branchConfig?.label || branch.type.replace(/_/g, ' ')}
+            size="small"
+            sx={{
+              bgcolor: '#8FBC8F',
+              color: 'white',
+              fontWeight: 500,
+              fontSize: '0.65rem',
+              height: '18px',
+            }}
+          />
         </Box>
 
-        <Typography variant="body1" fontWeight={600} gutterBottom>
+        <Typography variant="body2" fontWeight={600} gutterBottom sx={{ fontSize: '0.875rem' }}>
           {branch.title}
         </Typography>
 
@@ -129,11 +115,9 @@ function BranchCard({ branch, treeId, level, index, allBranches }: BranchCardPro
             variant="caption"
             color="text.secondary"
             sx={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              mb: 1,
+              mb: 0.5,
+              fontSize: '0.7rem',
+              display: 'block',
             }}
           >
             {branch.description}
@@ -141,7 +125,7 @@ function BranchCard({ branch, treeId, level, index, allBranches }: BranchCardPro
         )}
 
         {branch.dateOccurred && (
-          <Typography variant="caption" color="text.secondary" display="block">
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.7rem' }}>
             {new Date(branch.dateOccurred).toLocaleDateString()}
           </Typography>
         )}
@@ -150,175 +134,587 @@ function BranchCard({ branch, treeId, level, index, allBranches }: BranchCardPro
           <Chip
             label={`${childBranches.length} sub-${childBranches.length === 1 ? 'branch' : 'branches'}`}
             size="small"
-            sx={{ mt: 1, fontSize: '0.65rem' }}
+            sx={{ mt: 0.5, fontSize: '0.6rem', height: '16px' }}
           />
         )}
+
+        {/* Photo thumbnails */}
+        {branch.photos && branch.photos.length > 0 && (
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
+            {branch.photos.slice(0, 3).map((photo, index) => (
+              <Box
+                key={index}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src={photo}
+                  alt={`${branch.title} photo ${index + 1}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </Box>
+            ))}
+            {branch.photos.length > 3 && (
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: 'action.hover',
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
+                  color: 'text.secondary',
+                }}
+              >
+                +{branch.photos.length - 3}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', gap: 0.5, mt: 1.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Tooltip title="Edit branch">
+            <IconButton
+              size="small"
+              onClick={() => router.push(`/trees/${treeId}/edit-branch/${branch.id}`)}
+              sx={{
+                bgcolor: 'primary.main',
+                color: 'white',
+                width: 20,
+                height: 20,
+                '&:hover': {
+                  bgcolor: 'primary.dark',
+                },
+              }}
+            >
+              <Edit sx={{ fontSize: '0.75rem' }} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Add sub-branch">
+            <IconButton
+              size="small"
+              onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
+              sx={{
+                bgcolor: 'secondary.main',
+                color: 'white',
+                width: 20,
+                height: 20,
+                '&:hover': {
+                  bgcolor: 'secondary.dark',
+                },
+              }}
+            >
+              <Add sx={{ fontSize: '0.85rem' }} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Delete branch">
+            <IconButton
+              size="small"
+              onClick={handleDeleteClick}
+              sx={{
+                bgcolor: 'error.main',
+                color: 'white',
+                width: 20,
+                height: 20,
+                '&:hover': {
+                  bgcolor: 'error.dark',
+                },
+              }}
+            >
+              <Delete sx={{ fontSize: '0.75rem' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Paper>
 
-      {/* Child branches - Recursive */}
+      {/* Child branches - Recursive, stacked vertically */}
       {childBranches.length > 0 && (
         <Box
           sx={{
-            mt: 3,
             display: 'flex',
-            flexWrap: 'wrap',
-            gap: 3,
-            justifyContent: 'center',
-            pl: level > 0 ? 2 : 0,
+            flexDirection: 'column',
+            gap: 0.5,
           }}
         >
-          {childBranches.map((childBranch, childIndex) => (
+          {childBranches.map((childBranch) => (
             <BranchCard
               key={childBranch.id}
               branch={childBranch}
               treeId={treeId}
               level={level + 1}
-              index={childIndex}
               allBranches={allBranches}
+              onDelete={onDelete}
             />
           ))}
         </Box>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={showDeleteDialog}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Branch?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete "{branch.title}"?
+            {childBranches.length > 0 && (
+              <Box component="span" sx={{ display: 'block', mt: 2, color: 'error.main', fontWeight: 600 }}>
+                Warning: This branch has {childBranches.length} sub-branch{childBranches.length > 1 ? 'es' : ''}.
+                Deleting this branch will also delete all of its sub-branches.
+              </Box>
+            )}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
 
 export default function TreeVisualization({ tree }: TreeVisualizationProps) {
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rootCardRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [, setUpdateTrigger] = useState(0);
   const branches = tree.branches || [];
 
   // Get only root-level branches (no parent or parent is null)
   const rootBranches = branches.filter((b) => !b.parentBranchId);
 
+  // Force re-render to update connections
+  const forceUpdate = useCallback(() => {
+    setUpdateTrigger(prev => prev + 1);
+  }, []);
+
+  // Update connections after render and on resize
+  useEffect(() => {
+    const updateConnections = () => {
+      setTimeout(forceUpdate, 100);
+    };
+
+    updateConnections();
+    window.addEventListener('resize', updateConnections);
+
+    return () => {
+      window.removeEventListener('resize', updateConnections);
+    };
+  }, [branches.length, forceUpdate]);
+
+  // Additional update after animations complete
+  useEffect(() => {
+    const timer = setTimeout(forceUpdate, 500);
+    return () => clearTimeout(timer);
+  }, [branches.length, forceUpdate]);
+
+  // Draw connection lines using SVG - Vertical layout
+  const drawConnections = () => {
+    if (!containerRef.current || !rootCardRef.current) return null;
+
+    const paths: JSX.Element[] = [];
+    const containerRect = containerRef.current.getBoundingClientRect();
+
+    // Build parent-child relationships (branch to sub-branch)
+    branches.forEach((branch) => {
+      if (branch.parentBranchId) {
+        const childElement = containerRef.current?.querySelector(`[data-branch-id="${branch.id}"]`) as HTMLElement;
+        const parentElement = containerRef.current?.querySelector(`[data-branch-id="${branch.parentBranchId}"]`) as HTMLElement;
+
+        if (childElement && parentElement) {
+          const childRect = childElement.getBoundingClientRect();
+          const parentRect = parentElement.getBoundingClientRect();
+
+          // Calculate positions relative to container
+          // For sub-branches, connect from parent's right edge to child's left edge (horizontal)
+          const startX = parentRect.right - containerRect.left;
+          const startY = parentRect.top - containerRect.top + parentRect.height / 2;
+          const endX = childRect.left - containerRect.left;
+          const endY = childRect.top - containerRect.top + childRect.height / 2;
+
+          // Create smooth curve
+          const horizontalGap = endX - startX;
+          const controlPointOffset = Math.min(horizontalGap * 0.5, 60);
+
+          paths.push(
+            <path
+              key={`${branch.parentBranchId}-${branch.id}`}
+              d={`M ${startX} ${startY} C ${startX + controlPointOffset} ${startY}, ${endX - controlPointOffset} ${endY}, ${endX} ${endY}`}
+              stroke="#8FBC8F"
+              strokeWidth="2"
+              fill="none"
+            />
+          );
+        }
+      }
+    });
+
+    // Draw connections from root card to root branches (vertical)
+    const rootRect = rootCardRef.current.getBoundingClientRect();
+    const rootCenterX = rootRect.left - containerRect.left + rootRect.width / 2;
+    const rootBottomY = rootRect.bottom - containerRect.top;
+
+    rootBranches.forEach((branch) => {
+      const branchElement = containerRef.current?.querySelector(`[data-branch-id="${branch.id}"]`) as HTMLElement;
+      if (branchElement) {
+        const branchRect = branchElement.getBoundingClientRect();
+        const branchX = branchRect.left - containerRect.left + branchRect.width / 2;
+        const branchY = branchRect.top - containerRect.top;
+
+        // Vertical connection with curve
+        const verticalGap = branchY - rootBottomY;
+        const controlPointOffset = Math.min(verticalGap * 0.5, 40);
+
+        paths.push(
+          <path
+            key={`root-${branch.id}`}
+            d={`M ${rootCenterX} ${rootBottomY} C ${rootCenterX} ${rootBottomY + controlPointOffset}, ${branchX} ${branchY - controlPointOffset}, ${branchX} ${branchY}`}
+            stroke="#8FBC8F"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+        );
+      }
+    });
+
+    return paths;
+  };
+
+  // Handle branch deletion with recursive child deletion
+  const handleDeleteBranch = (branchId: string) => {
+    // Recursive function to get all branch IDs to delete (including children)
+    const getBranchIdsToDelete = (id: string): string[] => {
+      const childBranches = branches.filter((b) => b.parentBranchId === id);
+      const childIds = childBranches.flatMap((child) => getBranchIdsToDelete(child.id));
+      return [id, ...childIds];
+    };
+
+    const idsToDelete = getBranchIdsToDelete(branchId);
+
+    // Load tree from localStorage
+    const treeData = localStorage.getItem(`tree-${tree.id}`);
+    if (!treeData) return;
+
+    const treeObj = JSON.parse(treeData);
+
+    // Filter out deleted branches
+    treeObj.branches = treeObj.branches.filter((b: Branch) => !idsToDelete.includes(b.id));
+
+    // Save updated tree
+    try {
+      localStorage.setItem(`tree-${tree.id}`, JSON.stringify(treeObj));
+
+      // Also update in trees list
+      const trees = JSON.parse(localStorage.getItem('trees') || '[]');
+      const treeIndex = trees.findIndex((t: any) => t.id === tree.id);
+      if (treeIndex !== -1) {
+        trees[treeIndex] = treeObj;
+        localStorage.setItem('trees', JSON.stringify(trees));
+      }
+
+      // Refresh the page to show updated tree
+      router.refresh();
+      // Force a hard reload to ensure the tree is updated
+      window.location.reload();
+    } catch (err) {
+      console.error('Error deleting branch:', err);
+      alert('Failed to delete branch. Please try again.');
+    }
+  };
+
   return (
     <Box
+      ref={containerRef}
       sx={{
         width: '100%',
-        minHeight: '500px',
+        minHeight: '600px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         py: 4,
+        px: 2,
         position: 'relative',
       }}
     >
-      {/* Root/Trunk - The Person */}
+      {/* SVG overlay for connection lines */}
+      <svg
+        ref={svgRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      >
+        {drawConnections()}
+      </svg>
+
+      {/* Main content wrapper - Vertical layout */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 2,
+          gap: 4,
           zIndex: 2,
+          width: '100%',
+          maxWidth: '1200px',
         }}
       >
-        {/* Trunk visual */}
+        {/* Root/Trunk - The Person (Large prominent card) */}
         <Box
           sx={{
-            width: '4px',
-            height: '60px',
-            background: 'linear-gradient(to bottom, #8B7355, #6F5A40)',
-            borderRadius: '2px',
-          }}
-        />
-
-        {/* Root Person Card */}
-        <Paper
-          elevation={4}
-          sx={{
-            p: 3,
-            borderRadius: 4,
-            background: 'linear-gradient(135deg, #D4AF37 0%, #B8962D 100%)',
-            color: 'white',
-            minWidth: '300px',
-            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 2,
+            width: '100%',
           }}
         >
-          <Avatar
+          {/* Root Person Card - Large and centered */}
+          <Paper
+            ref={rootCardRef}
+            elevation={4}
             sx={{
-              width: 100,
-              height: 100,
-              margin: '0 auto 16px',
-              bgcolor: 'rgba(255,255,255,0.2)',
-              fontSize: '3rem',
+              p: 4,
+              borderRadius: 4,
+              background: 'linear-gradient(135deg, #D4AF37 0%, #B8962D 100%)',
+              color: 'white',
+              width: '100%',
+              maxWidth: '800px',
+              position: 'relative',
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 3,
+              alignItems: 'center',
             }}
           >
-            <AccountCircle sx={{ fontSize: '4rem' }} />
-          </Avatar>
+            <Tooltip title="Edit tree">
+              <IconButton
+                size="small"
+                onClick={() => router.push(`/trees/${tree.id}/edit-tree`)}
+                sx={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  color: 'white',
+                  width: 32,
+                  height: 32,
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.3)',
+                  },
+                }}
+              >
+                <Settings sx={{ fontSize: '1.2rem' }} />
+              </IconButton>
+            </Tooltip>
 
-          <Typography variant="h4" component="h2" gutterBottom fontWeight={600}>
-            {tree.rootPersonName}
-          </Typography>
+            {/* Left section - Photo */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <Avatar
+                src={tree.rootPersonProfilePhoto}
+                sx={{
+                  width: 120,
+                  height: 120,
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  fontSize: '3rem',
+                  border: '4px solid rgba(255,255,255,0.3)',
+                }}
+              >
+                {!tree.rootPersonProfilePhoto && <AccountCircle sx={{ fontSize: '4rem' }} />}
+              </Avatar>
 
-          {(tree.rootPersonBirthDate || tree.rootPersonDeathDate) && (
-            <Typography variant="body2" sx={{ opacity: 0.9, mb: 2 }}>
-              {tree.rootPersonBirthDate && new Date(tree.rootPersonBirthDate).getFullYear()}
-              {' - '}
-              {tree.rootPersonDeathDate && new Date(tree.rootPersonDeathDate).getFullYear()}
+              {/* Additional photos */}
+              {tree.rootPersonPhotos && tree.rootPersonPhotos.length > 0 && (
+                <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {tree.rootPersonPhotos.slice(0, 4).map((photo, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 1.5,
+                        overflow: 'hidden',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={photo}
+                        alt={`${tree.rootPersonName} photo ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </Box>
+                  ))}
+                  {tree.rootPersonPhotos.length > 4 && (
+                    <Box
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(255,255,255,0.2)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: 'white',
+                      }}
+                    >
+                      +{tree.rootPersonPhotos.length - 4}
+                    </Box>
+                  )}
+                </Box>
+              )}
+            </Box>
+
+            {/* Right section - Details */}
+            <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
+              <Typography variant="h3" component="h1" gutterBottom fontWeight={700} sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' } }}>
+                {tree.rootPersonName}
+              </Typography>
+
+              {(tree.rootPersonBirthDate || tree.rootPersonDeathDate) && (
+                <Typography variant="h6" sx={{ opacity: 0.95, mb: 2, fontSize: { xs: '0.95rem', md: '1.1rem' } }}>
+                  {tree.rootPersonBirthDate && new Date(tree.rootPersonBirthDate).getFullYear()}
+                  {' - '}
+                  {tree.rootPersonDeathDate && new Date(tree.rootPersonDeathDate).getFullYear()}
+                </Typography>
+              )}
+
+              {tree.rootPersonStory && (
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    bgcolor: 'rgba(255,255,255,0.15)',
+                    borderRadius: 2,
+                    fontSize: { xs: '0.9rem', md: '1rem' },
+                    lineHeight: 1.6,
+                    maxHeight: '200px',
+                    overflow: 'auto',
+                  }}
+                >
+                  {tree.rootPersonStory}
+                </Typography>
+              )}
+
+              {/* Stats */}
+              <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <Chip
+                  label={`${branches.length} ${branches.length === 1 ? 'Branch' : 'Branches'}`}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                  }}
+                />
+                <Chip
+                  label={`${rootBranches.length} Direct ${rootBranches.length === 1 ? 'Impact' : 'Impacts'}`}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </Box>
+            </Box>
+          </Paper>
+
+          {/* Trunk visual (vertical connector) */}
+          <Box
+            sx={{
+              width: '4px',
+              height: '60px',
+              background: 'linear-gradient(to bottom, #8B7355, #6F5A40)',
+              borderRadius: '2px',
+            }}
+          />
+        </Box>
+
+        {/* Root-level Branches - Horizontal layout */}
+        {rootBranches.length > 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'row',
+              gap: 3,
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              width: '100%',
+            }}
+          >
+            {rootBranches.map((branch) => (
+              <BranchCard
+                key={branch.id}
+                branch={branch}
+                treeId={tree.id}
+                level={0}
+                allBranches={branches}
+                onDelete={handleDeleteBranch}
+              />
+            ))}
+          </Box>
+        )}
+
+        {/* Empty state */}
+        {branches.length === 0 && (
+          <Box
+            sx={{
+              p: 4,
+              textAlign: 'center',
+              color: 'text.secondary',
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              No branches yet
             </Typography>
-          )}
-
-          {tree.rootPersonStory && (
-            <Typography
-              variant="body2"
-              sx={{
-                mt: 2,
-                p: 2,
-                bgcolor: 'rgba(255,255,255,0.15)',
-                borderRadius: 2,
-                maxHeight: '100px',
-                overflow: 'auto',
-              }}
-            >
-              {tree.rootPersonStory}
+            <Typography variant="body2">
+              Add branches to show how this life continues to bless others
             </Typography>
-          )}
-        </Paper>
+          </Box>
+        )}
       </Box>
-
-      {/* Root-level Branches */}
-      {rootBranches.length > 0 && (
-        <Box
-          sx={{
-            mt: 4,
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 3,
-            justifyContent: 'center',
-            maxWidth: '1200px',
-          }}
-        >
-          {rootBranches.map((branch, index) => (
-            <BranchCard
-              key={branch.id}
-              branch={branch}
-              treeId={tree.id}
-              level={0}
-              index={index}
-              allBranches={branches}
-            />
-          ))}
-        </Box>
-      )}
-
-      {/* Empty state */}
-      {branches.length === 0 && (
-        <Box
-          sx={{
-            mt: 4,
-            p: 4,
-            textAlign: 'center',
-            color: 'text.secondary',
-          }}
-        >
-          <Typography variant="h6" gutterBottom>
-            No branches yet
-          </Typography>
-          <Typography variant="body2">
-            Add branches to show how this life continues to bless others
-          </Typography>
-        </Box>
-      )}
     </Box>
   );
 }

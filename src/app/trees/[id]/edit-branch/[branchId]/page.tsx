@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   Container,
   Typography,
@@ -18,17 +18,16 @@ import {
   Chip,
   IconButton,
 } from '@mui/material';
-import { ArrowBack, AccountTree, PhotoCamera, Delete } from '@mui/icons-material';
+import { ArrowBack, Edit as EditIcon, PhotoCamera, Delete } from '@mui/icons-material';
 import { BRANCH_TYPES } from '@/constants/branchTypes';
 
-export default function AddBranchPage() {
+export default function EditBranchPage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const parentBranchId = searchParams.get('parentBranchId');
+  const treeId = params.id as string;
+  const branchId = params.branchId as string;
 
   const [treeName, setTreeName] = useState('');
-  const [parentBranchTitle, setParentBranchTitle] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     type: '',
@@ -37,24 +36,31 @@ export default function AddBranchPage() {
   });
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load tree to get the name and parent branch info
-    const treeId = params.id as string;
+    // Load tree and branch data
     const treeData = localStorage.getItem(`tree-${treeId}`);
     if (treeData) {
       const tree = JSON.parse(treeData);
       setTreeName(tree.rootPersonName);
 
-      // If adding to a specific branch, find it
-      if (parentBranchId && tree.branches) {
-        const parentBranch = tree.branches.find((b: any) => b.id === parentBranchId);
-        if (parentBranch) {
-          setParentBranchTitle(parentBranch.title);
+      // Find the branch to edit
+      if (tree.branches) {
+        const branch = tree.branches.find((b: any) => b.id === branchId);
+        if (branch) {
+          setFormData({
+            title: branch.title || '',
+            type: branch.type || '',
+            description: branch.description || '',
+            dateOccurred: branch.dateOccurred || '',
+          });
+          setPhotos(branch.photos || []);
         }
       }
     }
-  }, [params.id, parentBranchId]);
+    setLoading(false);
+  }, [treeId, branchId]);
 
   const handleChange = (field: string) => (e: any) => {
     setFormData(prev => ({
@@ -105,15 +111,6 @@ export default function AddBranchPage() {
     const files = e.target.files;
     if (!files) return;
 
-    // TODO (Production): Replace with S3 upload
-    // 1. Upload to S3 using presigned URL or direct upload with AWS SDK
-    // 2. Store S3 URL in database instead of base64
-    // 3. Use CloudFront for CDN delivery
-    // 4. Implement image optimization (resize, compress) before upload
-    // 5. Add security: signed URLs with expiration for private photos
-    //
-    // Current (MVP/Local): Base64 encoding with compression for localStorage
-
     setError(''); // Clear any previous errors
 
     for (const file of Array.from(files)) {
@@ -151,7 +148,6 @@ export default function AddBranchPage() {
     }
 
     // Load existing tree
-    const treeId = params.id as string;
     const treeData = localStorage.getItem(`tree-${treeId}`);
 
     if (!treeData) {
@@ -161,79 +157,79 @@ export default function AddBranchPage() {
 
     const tree = JSON.parse(treeData);
 
-    // Create new branch
-    const newBranch = {
-      id: Date.now().toString(),
-      ...formData,
-      parentBranchId: parentBranchId || null,
-      photos: photos,
-      createdAt: new Date().toISOString(),
-    };
+    // Find and update the branch
+    if (tree.branches) {
+      const branchIndex = tree.branches.findIndex((b: any) => b.id === branchId);
+      if (branchIndex !== -1) {
+        tree.branches[branchIndex] = {
+          ...tree.branches[branchIndex],
+          ...formData,
+          photos: photos,
+          updatedAt: new Date().toISOString(),
+        };
 
-    // Add branch to tree
-    tree.branches = tree.branches || [];
-    tree.branches.push(newBranch);
+        // Save updated tree
+        try {
+          localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
 
-    // Save updated tree
-    try {
-      localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
+          // Also update in trees list
+          const trees = JSON.parse(localStorage.getItem('trees') || '[]');
+          const treeIndex = trees.findIndex((t: any) => t.id === treeId);
+          if (treeIndex !== -1) {
+            trees[treeIndex] = tree;
+            localStorage.setItem('trees', JSON.stringify(trees));
+          }
 
-      // Also update in trees list
-      const trees = JSON.parse(localStorage.getItem('trees') || '[]');
-      const treeIndex = trees.findIndex((t: any) => t.id === treeId);
-      if (treeIndex !== -1) {
-        trees[treeIndex] = tree;
-        localStorage.setItem('trees', JSON.stringify(trees));
-      }
-
-      // Redirect back to tree view
-      router.push(`/trees/${treeId}`);
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'QuotaExceededError') {
-        setError(
-          'Storage limit exceeded. Please remove some photos or try uploading smaller images. ' +
-          'LocalStorage has a ~5-10MB limit. Consider removing photos from other trees or branches.'
-        );
+          // Redirect back to tree view
+          router.push(`/trees/${treeId}`);
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'QuotaExceededError') {
+            setError(
+              'Storage limit exceeded. Please remove some photos or try uploading smaller images. ' +
+              'LocalStorage has a ~5-10MB limit. Consider removing photos from other trees or branches.'
+            );
+          } else {
+            setError('Failed to save branch. Please try again.');
+          }
+          console.error('Error saving branch:', err);
+        }
       } else {
-        setError('Failed to save branch. Please try again.');
+        setError('Branch not found');
       }
-      console.error('Error saving branch:', err);
+    } else {
+      setError('No branches found');
     }
   };
+
+  if (loading) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Typography>Loading...</Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
       <Button
         variant="outlined"
         startIcon={<ArrowBack />}
-        onClick={() => router.push(`/trees/${params.id}`)}
+        onClick={() => router.push(`/trees/${treeId}`)}
         sx={{ mb: 3 }}
       >
         Back to Tree
       </Button>
 
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom color="primary">
-          Add a Branch
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <EditIcon color="primary" />
+          <Typography variant="h3" component="h1" color="primary">
+            Edit Branch
+          </Typography>
+        </Box>
+        <Typography variant="body1" color="text.secondary">
+          {treeName ? `Editing branch in ${treeName}'s tree` : 'Update branch details'}
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-          {treeName ? `Add to ${treeName}'s tree` : 'Share how this life has blessed others'}
-        </Typography>
-
-        {parentBranchTitle && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-            <AccountTree color="secondary" />
-            <Typography variant="body2">
-              Adding a sub-branch to:
-            </Typography>
-            <Chip
-              label={parentBranchTitle}
-              color="secondary"
-              size="small"
-              sx={{ fontWeight: 500 }}
-            />
-          </Box>
-        )}
       </Box>
 
       <Paper elevation={2} sx={{ p: 4 }}>
@@ -370,7 +366,7 @@ export default function AddBranchPage() {
               <Button
                 variant="outlined"
                 size="large"
-                onClick={() => router.push(`/trees/${params.id}`)}
+                onClick={() => router.push(`/trees/${treeId}`)}
               >
                 Cancel
               </Button>
@@ -378,21 +374,14 @@ export default function AddBranchPage() {
                 type="submit"
                 variant="contained"
                 size="large"
-                color="secondary"
+                color="primary"
               >
-                Add Branch
+                Save Changes
               </Button>
             </Box>
           </Stack>
         </form>
       </Paper>
-
-      <Box sx={{ mt: 3, p: 2, bgcolor: 'secondary.light', borderRadius: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          <strong>Coming soon:</strong> Add photos, videos, links to donation pages,
-          and create sub-branches to show how impact continues to grow.
-        </Typography>
-      </Box>
     </Container>
   );
 }

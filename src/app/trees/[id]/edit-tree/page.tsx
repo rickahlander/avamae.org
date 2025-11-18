@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import {
   Container,
   Typography,
@@ -11,50 +11,42 @@ import {
   Paper,
   Stack,
   Alert,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Chip,
   IconButton,
 } from '@mui/material';
-import { ArrowBack, AccountTree, PhotoCamera, Delete } from '@mui/icons-material';
-import { BRANCH_TYPES } from '@/constants/branchTypes';
+import { ArrowBack, Settings, PhotoCamera, Delete } from '@mui/icons-material';
 
-export default function AddBranchPage() {
+export default function EditTreePage() {
   const params = useParams();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const parentBranchId = searchParams.get('parentBranchId');
+  const treeId = params.id as string;
 
-  const [treeName, setTreeName] = useState('');
-  const [parentBranchTitle, setParentBranchTitle] = useState('');
   const [formData, setFormData] = useState({
-    title: '',
-    type: '',
-    description: '',
-    dateOccurred: '',
+    rootPersonName: '',
+    rootPersonBirthDate: '',
+    rootPersonDeathDate: '',
+    rootPersonStory: '',
   });
+  const [profilePhoto, setProfilePhoto] = useState<string>('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load tree to get the name and parent branch info
-    const treeId = params.id as string;
+    // Load tree data
     const treeData = localStorage.getItem(`tree-${treeId}`);
     if (treeData) {
       const tree = JSON.parse(treeData);
-      setTreeName(tree.rootPersonName);
-
-      // If adding to a specific branch, find it
-      if (parentBranchId && tree.branches) {
-        const parentBranch = tree.branches.find((b: any) => b.id === parentBranchId);
-        if (parentBranch) {
-          setParentBranchTitle(parentBranch.title);
-        }
-      }
+      setFormData({
+        rootPersonName: tree.rootPersonName || '',
+        rootPersonBirthDate: tree.rootPersonBirthDate || '',
+        rootPersonDeathDate: tree.rootPersonDeathDate || '',
+        rootPersonStory: tree.rootPersonStory || '',
+      });
+      setProfilePhoto(tree.rootPersonProfilePhoto || '');
+      setPhotos(tree.rootPersonPhotos || []);
     }
-  }, [params.id, parentBranchId]);
+    setLoading(false);
+  }, [treeId]);
 
   const handleChange = (field: string) => (e: any) => {
     setFormData(prev => ({
@@ -101,18 +93,29 @@ export default function AddBranchPage() {
     });
   };
 
+  const handleProfilePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(''); // Clear any previous errors
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit before compression
+      setError('Photo size must be less than 10MB');
+      return;
+    }
+
+    try {
+      const compressedPhoto = await compressImage(file);
+      setProfilePhoto(compressedPhoto);
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      setError('Failed to process image. Please try a different photo.');
+    }
+  };
+
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
-    // TODO (Production): Replace with S3 upload
-    // 1. Upload to S3 using presigned URL or direct upload with AWS SDK
-    // 2. Store S3 URL in database instead of base64
-    // 3. Use CloudFront for CDN delivery
-    // 4. Implement image optimization (resize, compress) before upload
-    // 5. Add security: signed URLs with expiration for private photos
-    //
-    // Current (MVP/Local): Base64 encoding with compression for localStorage
 
     setError(''); // Clear any previous errors
 
@@ -141,17 +144,12 @@ export default function AddBranchPage() {
     setError('');
 
     // Validation
-    if (!formData.title.trim()) {
-      setError('Please enter a title');
-      return;
-    }
-    if (!formData.type) {
-      setError('Please select a branch type');
+    if (!formData.rootPersonName.trim()) {
+      setError('Please enter a name');
       return;
     }
 
     // Load existing tree
-    const treeId = params.id as string;
     const treeData = localStorage.getItem(`tree-${treeId}`);
 
     if (!treeData) {
@@ -161,18 +159,14 @@ export default function AddBranchPage() {
 
     const tree = JSON.parse(treeData);
 
-    // Create new branch
-    const newBranch = {
-      id: Date.now().toString(),
-      ...formData,
-      parentBranchId: parentBranchId || null,
-      photos: photos,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Add branch to tree
-    tree.branches = tree.branches || [];
-    tree.branches.push(newBranch);
+    // Update tree with new data
+    tree.rootPersonName = formData.rootPersonName;
+    tree.rootPersonBirthDate = formData.rootPersonBirthDate;
+    tree.rootPersonDeathDate = formData.rootPersonDeathDate;
+    tree.rootPersonStory = formData.rootPersonStory;
+    tree.rootPersonProfilePhoto = profilePhoto;
+    tree.rootPersonPhotos = photos;
+    tree.updatedAt = new Date().toISOString();
 
     // Save updated tree
     try {
@@ -195,45 +189,41 @@ export default function AddBranchPage() {
           'LocalStorage has a ~5-10MB limit. Consider removing photos from other trees or branches.'
         );
       } else {
-        setError('Failed to save branch. Please try again.');
+        setError('Failed to save tree. Please try again.');
       }
-      console.error('Error saving branch:', err);
+      console.error('Error saving tree:', err);
     }
   };
+
+  if (loading) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
+        <Typography>Loading...</Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
       <Button
         variant="outlined"
         startIcon={<ArrowBack />}
-        onClick={() => router.push(`/trees/${params.id}`)}
+        onClick={() => router.push(`/trees/${treeId}`)}
         sx={{ mb: 3 }}
       >
         Back to Tree
       </Button>
 
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" component="h1" gutterBottom color="primary">
-          Add a Branch
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Settings color="primary" />
+          <Typography variant="h3" component="h1" color="primary">
+            Edit Tree
+          </Typography>
+        </Box>
+        <Typography variant="body1" color="text.secondary">
+          Update the memorial tree details
         </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-          {treeName ? `Add to ${treeName}'s tree` : 'Share how this life has blessed others'}
-        </Typography>
-
-        {parentBranchTitle && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-            <AccountTree color="secondary" />
-            <Typography variant="body2">
-              Adding a sub-branch to:
-            </Typography>
-            <Chip
-              label={parentBranchTitle}
-              color="secondary"
-              size="small"
-              sx={{ fontWeight: 500 }}
-            />
-          </Box>
-        )}
       </Box>
 
       <Paper elevation={2} sx={{ p: 4 }}>
@@ -245,56 +235,129 @@ export default function AddBranchPage() {
               </Alert>
             )}
 
-            <FormControl fullWidth required>
-              <InputLabel>Branch Type</InputLabel>
-              <Select
-                value={formData.type}
-                onChange={handleChange('type')}
-                label="Branch Type"
-              >
-                {BRANCH_TYPES.map((type) => {
-                  const Icon = type.icon;
-                  return (
-                    <MenuItem key={type.value} value={type.value}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Icon sx={{ fontSize: '1.2rem' }} />
-                        <span>{type.label}</span>
-                      </Box>
-                    </MenuItem>
-                  );
-                })}
-              </Select>
-            </FormControl>
-
             <TextField
-              label="Title"
+              label="Name"
               required
               fullWidth
-              value={formData.title}
-              onChange={handleChange('title')}
-              helperText="E.g., 'Heart recipient - gave life to John Smith' or 'Relationship healed with sister'"
+              value={formData.rootPersonName}
+              onChange={handleChange('rootPersonName')}
+              helperText="The name of the person this memorial tree honors"
               variant="outlined"
             />
 
-            <TextField
-              label="Description"
-              multiline
-              rows={4}
-              fullWidth
-              value={formData.description}
-              onChange={handleChange('description')}
-              helperText="Share the story of this impact"
-              variant="outlined"
-            />
+            {/* Profile Photo */}
+            <Box>
+              <Typography variant="body2" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
+                Profile Photo (optional)
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                This photo will be displayed as the main profile image in the tree
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {profilePhoto ? (
+                  <Box sx={{ position: 'relative' }}>
+                    <Box
+                      sx={{
+                        width: 120,
+                        height: 120,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                      }}
+                    >
+                      <img
+                        src={profilePhoto}
+                        alt="Profile"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => setProfilePhoto('')}
+                      sx={{
+                        position: 'absolute',
+                        top: -8,
+                        right: -8,
+                        bgcolor: 'error.main',
+                        color: 'white',
+                        '&:hover': {
+                          bgcolor: 'error.dark',
+                        },
+                      }}
+                    >
+                      <Delete sx={{ fontSize: '1rem' }} />
+                    </IconButton>
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      borderRadius: 2,
+                      border: '2px dashed',
+                      borderColor: 'divider',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'background.default',
+                    }}
+                  >
+                    <PhotoCamera sx={{ fontSize: 40, color: 'text.disabled' }} />
+                  </Box>
+                )}
+
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<PhotoCamera />}
+                >
+                  {profilePhoto ? 'Change Photo' : 'Upload Photo'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/*"
+                    onChange={handleProfilePhotoUpload}
+                  />
+                </Button>
+              </Box>
+            </Box>
 
             <TextField
-              label="Date"
+              label="Birth Date"
               type="date"
               fullWidth
-              value={formData.dateOccurred}
-              onChange={handleChange('dateOccurred')}
+              value={formData.rootPersonBirthDate}
+              onChange={handleChange('rootPersonBirthDate')}
               InputLabelProps={{ shrink: true }}
-              helperText="When did this impact occur?"
+              helperText="Optional"
+              variant="outlined"
+            />
+
+            <TextField
+              label="Death Date"
+              type="date"
+              fullWidth
+              value={formData.rootPersonDeathDate}
+              onChange={handleChange('rootPersonDeathDate')}
+              InputLabelProps={{ shrink: true }}
+              helperText="Optional"
+              variant="outlined"
+            />
+
+            <TextField
+              label="Story / Biography"
+              multiline
+              rows={6}
+              fullWidth
+              value={formData.rootPersonStory}
+              onChange={handleChange('rootPersonStory')}
+              helperText="Share the story of this person's life and legacy"
               variant="outlined"
             />
 
@@ -370,7 +433,7 @@ export default function AddBranchPage() {
               <Button
                 variant="outlined"
                 size="large"
-                onClick={() => router.push(`/trees/${params.id}`)}
+                onClick={() => router.push(`/trees/${treeId}`)}
               >
                 Cancel
               </Button>
@@ -378,21 +441,14 @@ export default function AddBranchPage() {
                 type="submit"
                 variant="contained"
                 size="large"
-                color="secondary"
+                color="primary"
               >
-                Add Branch
+                Save Changes
               </Button>
             </Box>
           </Stack>
         </form>
       </Paper>
-
-      <Box sx={{ mt: 3, p: 2, bgcolor: 'secondary.light', borderRadius: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          <strong>Coming soon:</strong> Add photos, videos, links to donation pages,
-          and create sub-branches to show how impact continues to grow.
-        </Typography>
-      </Box>
     </Container>
   );
 }
