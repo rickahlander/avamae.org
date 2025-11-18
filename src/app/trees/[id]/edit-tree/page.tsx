@@ -53,22 +53,64 @@ export default function EditTreePage() {
     }));
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+
+          // Resize to max 800px width/height while maintaining aspect ratio
+          let width = img.width;
+          let height = img.height;
+          const maxSize = 800;
+
+          if (width > height && width > maxSize) {
+            height = (height * maxSize) / width;
+            width = maxSize;
+          } else if (height > maxSize) {
+            width = (width * maxSize) / height;
+            height = maxSize;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          // Compress to JPEG with 0.7 quality
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach((file) => {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        setError('Photo size must be less than 5MB');
-        return;
+    setError(''); // Clear any previous errors
+
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit before compression
+        setError('Photo size must be less than 10MB');
+        continue;
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotos(prev => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
+      try {
+        const compressedPhoto = await compressImage(file);
+        setPhotos(prev => [...prev, compressedPhoto]);
+      } catch (err) {
+        console.error('Error compressing image:', err);
+        setError('Failed to process image. Please try a different photo.');
+      }
+    }
   };
 
   const handleRemovePhoto = (index: number) => {
@@ -104,18 +146,30 @@ export default function EditTreePage() {
     tree.updatedAt = new Date().toISOString();
 
     // Save updated tree
-    localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
+    try {
+      localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
 
-    // Also update in trees list
-    const trees = JSON.parse(localStorage.getItem('trees') || '[]');
-    const treeIndex = trees.findIndex((t: any) => t.id === treeId);
-    if (treeIndex !== -1) {
-      trees[treeIndex] = tree;
-      localStorage.setItem('trees', JSON.stringify(trees));
+      // Also update in trees list
+      const trees = JSON.parse(localStorage.getItem('trees') || '[]');
+      const treeIndex = trees.findIndex((t: any) => t.id === treeId);
+      if (treeIndex !== -1) {
+        trees[treeIndex] = tree;
+        localStorage.setItem('trees', JSON.stringify(trees));
+      }
+
+      // Redirect back to tree view
+      router.push(`/trees/${treeId}`);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'QuotaExceededError') {
+        setError(
+          'Storage limit exceeded. Please remove some photos or try uploading smaller images. ' +
+          'LocalStorage has a ~5-10MB limit. Consider removing photos from other trees or branches.'
+        );
+      } else {
+        setError('Failed to save tree. Please try again.');
+      }
+      console.error('Error saving tree:', err);
     }
-
-    // Redirect back to tree view
-    router.push(`/trees/${treeId}`);
   };
 
   if (loading) {
