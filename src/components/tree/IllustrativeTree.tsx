@@ -282,18 +282,12 @@ export default function IllustrativeTree({ tree }: IllustrativeTreeProps) {
               }}
             />
 
-            {/* Branch icon */}
-            <text
-              y="-5"
-              textAnchor="middle"
-              fontSize="16"
-            >
-              {node.branch.type === 'organ_donation' ? '❤️' :
-               node.branch.type === 'healed_relationship' ? '🤝' :
-               node.branch.type === 'foundation' ? '🏛️' :
-               node.branch.type === 'charity' ? '🎗️' :
-               node.branch.type === 'inspired_act' ? '✨' : '🌟'}
-            </text>
+            {/* Branch type indicator - small circle */}
+            <circle
+              r="8"
+              fill="white"
+              opacity="0.9"
+            />
 
             {/* Branch title (below circle) */}
             <text

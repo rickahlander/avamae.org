@@ -19,15 +19,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { ArrowBack, AccountTree, PhotoCamera, Delete } from '@mui/icons-material';
-
-const BRANCH_TYPES = [
-  { value: 'organ_donation', label: 'Organ Donation', icon: '❤️' },
-  { value: 'healed_relationship', label: 'Healed Relationship', icon: '🤝' },
-  { value: 'foundation', label: 'Foundation/Organization', icon: '🏛️' },
-  { value: 'charity', label: 'Charity Connection', icon: '🎗️' },
-  { value: 'inspired_act', label: 'Inspired Act of Kindness', icon: '✨' },
-  { value: 'life_touched', label: 'Life Touched/Changed', icon: '🌟' },
-];
+import { BRANCH_TYPES } from '@/constants/branchTypes';
 
 export default function AddBranchPage() {
   const params = useParams();
@@ -260,11 +252,17 @@ export default function AddBranchPage() {
                 onChange={handleChange('type')}
                 label="Branch Type"
               >
-                {BRANCH_TYPES.map((type) => (
-                  <MenuItem key={type.value} value={type.value}>
-                    {type.icon} {type.label}
-                  </MenuItem>
-                ))}
+                {BRANCH_TYPES.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <MenuItem key={type.value} value={type.value}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Icon sx={{ fontSize: '1.2rem' }} />
+                        <span>{type.label}</span>
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
               </Select>
             </FormControl>
 
