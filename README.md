@@ -227,16 +227,32 @@ The application supports both local and S3 storage for media files:
 
 ## Deployment
 
-See [terraform/README.md](./terraform/README.md) for detailed AWS deployment instructions.
+Deploy to AWS with cost-optimized configuration (~$45-70/month for low-traffic production).
 
-### Quick Deployment Steps
+### Quick Start
 
-1. Configure Terraform variables
-2. Run `terraform apply` in the `terraform/` directory
-3. Set up DNS records (SES, domain)
-4. Configure Amplify environment variables
-5. Set up Clerk production webhook
-6. Push code to trigger deployment
+```bash
+# 1. Configure terraform/terraform.tfvars
+# 2. Deploy infrastructure
+cd terraform
+terraform init
+terraform apply
+
+# 3. Configure Amplify environment variables (see DEPLOYMENT.md)
+# 4. Push to GitHub - auto-deploys!
+git push origin main
+```
+
+**📖 Detailed Guides:**
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide with troubleshooting
+- [terraform/QUICK-START.md](./terraform/QUICK-START.md) - 5-minute quick reference
+- [terraform/README.md](./terraform/README.md) - Infrastructure documentation
+
+**🏗️ Infrastructure:**
+- AWS Amplify (Next.js SSR with auto-build from GitHub)
+- RDS PostgreSQL (db.t4g.micro for cost optimization)
+- S3 + CloudFront (media storage with lifecycle policies)
+- Optional: SES for email
 
 ## Database Schema
 

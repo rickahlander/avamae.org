@@ -73,7 +73,7 @@ variable "db_password" {
 # Modules
 # ============================================================================
 
-# RDS PostgreSQL Database
+# RDS PostgreSQL Database (Cost-Optimized)
 module "rds" {
   source = "./modules/rds"
 
@@ -83,7 +83,7 @@ module "rds" {
   db_password  = var.db_password
 }
 
-# S3 Buckets for Media Storage
+# S3 Buckets for Media Storage (with lifecycle policies)
 module "s3" {
   source = "./modules/s3"
 
@@ -91,20 +91,20 @@ module "s3" {
   domain_name = var.domain_name
 }
 
-# AWS Amplify for Next.js Hosting
+# AWS Amplify for Next.js Hosting (with auto-build from GitHub)
 module "amplify" {
   source = "./modules/amplify"
 
-  environment      = var.environment
-  domain_name      = var.domain_name
-  repository_url   = var.repository_url
-  github_token     = var.github_token
-  database_url     = module.rds.database_url
-  s3_bucket_name   = module.s3.media_bucket_name
+  environment       = var.environment
+  domain_name       = var.domain_name
+  repository_url    = var.repository_url
+  github_token      = var.github_token
+  database_url      = module.rds.database_url
+  s3_bucket_name    = module.s3.media_bucket_name
   cloudfront_domain = module.s3.cloudfront_domain
 }
 
-# SES for Email
+# SES for Email (Optional - comment out to save costs if not needed yet)
 module "ses" {
   source = "./modules/ses"
 
@@ -117,12 +117,12 @@ module "ses" {
 # ============================================================================
 
 variable "repository_url" {
-  description = "GitHub repository URL"
+  description = "GitHub repository URL (e.g., https://github.com/username/repo)"
   type        = string
 }
 
 variable "github_token" {
-  description = "GitHub personal access token"
+  description = "GitHub personal access token for Amplify access"
   type        = string
   sensitive   = true
 }

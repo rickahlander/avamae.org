@@ -67,6 +67,12 @@ resource "aws_amplify_app" "main" {
               - node_modules/**/*
               - .next/cache/**/*
         appRoot: /
+    # Performance optimizations for Next.js 15
+    environment:
+      variables:
+        AMPLIFY_MONOREPO_APP_ROOT: "/"
+        AMPLIFY_DIFF_DEPLOY: "true"
+        AMPLIFY_SKIP_INSTALL: "false"
   EOT
 
   enable_auto_branch_creation = false

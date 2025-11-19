@@ -77,10 +77,14 @@ resource "aws_db_instance" "postgres" {
   engine         = "postgres"
   engine_version = "16.1"
 
-  instance_class    = var.environment == "production" ? "db.t3.small" : "db.t3.micro"
+  # Cost-optimized: t4g.micro (ARM-based, cheapest option) for dev
+  instance_class    = var.environment == "production" ? "db.t4g.small" : "db.t4g.micro"
   allocated_storage = var.environment == "production" ? 50 : 20
   storage_type      = "gp3"
   storage_encrypted = true
+  
+  # Enable storage autoscaling for cost efficiency
+  max_allocated_storage = var.environment == "production" ? 100 : 30
 
   db_name  = var.db_name
   username = var.db_username
@@ -97,6 +101,9 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible    = true # Set to false in production with VPN/bastion
   skip_final_snapshot    = var.environment != "production"
   deletion_protection    = var.environment == "production"
+  
+  # Performance Insights disabled for cost savings in dev
+  enabled_cloudwatch_logs_exports = var.environment == "production" ? ["postgresql", "upgrade"] : []
 
   tags = {
     Name = "avamae-postgres-${var.environment}"
