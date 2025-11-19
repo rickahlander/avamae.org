@@ -112,13 +112,13 @@ module "amplify" {
   cloudfront_domain = module.s3.cloudfront_domain
 }
 
-# SES for Email (Optional - comment out to save costs if not needed yet)
-module "ses" {
-  source = "./modules/ses"
-
-  environment = var.environment
-  domain_name = var.domain_name
-}
+# SES for Email - REMOVED (Clerk handles all authentication emails)
+# module "ses" {
+#   source = "./modules/ses"
+#
+#   environment = var.environment
+#   domain_name = var.domain_name
+# }
 
 # ============================================================================
 # Additional Variables for Amplify
@@ -171,7 +171,8 @@ output "amplify_default_domain" {
   value       = module.amplify.default_domain
 }
 
-output "ses_smtp_endpoint" {
-  description = "SES SMTP endpoint"
-  value       = module.ses.smtp_endpoint
-}
+# SES outputs removed - Clerk handles authentication emails
+# output "ses_smtp_endpoint" {
+#   description = "SES SMTP endpoint"
+#   value       = module.ses.smtp_endpoint
+# }
