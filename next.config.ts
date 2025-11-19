@@ -18,8 +18,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
-  // Enable standalone output for optimized production builds
-  output: "standalone",
+  // Standalone output removed - not needed for Amplify hosting
+  // output: "standalone",
 };
 
 export default nextConfig;
