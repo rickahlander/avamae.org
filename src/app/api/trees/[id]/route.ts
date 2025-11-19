@@ -57,14 +57,8 @@ export async function GET(
       return NextResponse.json({ error: 'Tree not found' }, { status: 404 });
     }
 
-    // Check access permissions if user is authenticated
-    if (userId) {
-      const hasAccess = await canViewTree(userId, id);
-      if (!hasAccess) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    // Unauthenticated users can view public trees (tree-level visibility TBD)
+    // All users (authenticated and unauthenticated) can view trees
+    // In the future, we could add a privacy setting to restrict access to members only
 
     // Transform the data to match what TreeVisualization expects
     const transformedTree = {

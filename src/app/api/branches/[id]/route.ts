@@ -47,14 +47,8 @@ export async function GET(
       return NextResponse.json({ error: 'Branch not found' }, { status: 404 });
     }
 
-    // Check permissions if user is authenticated
-    if (userId) {
-      const hasAccess = await canViewBranch(userId, id);
-      if (!hasAccess) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
-    // Unauthenticated users can view public branches (based on tree visibility)
+    // All users (authenticated and unauthenticated) can view branches
+    // In the future, we could add privacy settings to restrict access
 
     return NextResponse.json(branch);
   } catch (error) {
