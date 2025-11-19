@@ -75,10 +75,18 @@ resource "aws_amplify_app" "main" {
   # Environment variables
   environment_variables = {
     NODE_ENV              = "production"
-    NEXTAUTH_URL          = "https://${var.domain_name}"
     AWS_REGION            = data.aws_region.current.name
     AWS_S3_BUCKET         = var.s3_bucket_name
     AWS_CLOUDFRONT_DOMAIN = var.cloudfront_domain
+    STORAGE_TYPE          = "s3"
+    # Clerk keys must be added manually in Amplify Console after deployment
+    # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_..."
+    # CLERK_SECRET_KEY = "sk_..."
+    # NEXT_PUBLIC_CLERK_SIGN_IN_URL = "/sign-in"
+    # NEXT_PUBLIC_CLERK_SIGN_UP_URL = "/sign-up"
+    # NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL = "/"
+    # NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL = "/"
+    # CLERK_WEBHOOK_SECRET = "whsec_..."
   }
 
   custom_rule {
