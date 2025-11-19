@@ -8,7 +8,8 @@ const isPublicRoute = createRouteMatcher([
   '/trees(.*)', // Allow public viewing of trees
   '/api/trees(.*)', // Allow API access to trees
   '/api/branches(.*)', // Allow API access to branches  
-  '/api/webhooks(.*)'
+  '/api/webhooks(.*)',
+  '/api/health' // Health check endpoint
 ])
 
 export default clerkMiddleware(async (auth, request) => {
