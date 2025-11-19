@@ -48,31 +48,23 @@ resource "aws_amplify_app" "main" {
 
   build_spec = <<-EOT
     version: 1
-    applications:
-      - frontend:
-          phases:
-            preBuild:
-              commands:
-                - npm ci
-                - npx prisma generate
-            build:
-              commands:
-                - npm run build
-          artifacts:
-            baseDirectory: .next
-            files:
-              - '**/*'
-          cache:
-            paths:
-              - node_modules/**/*
-              - .next/cache/**/*
-        appRoot: /
-    # Performance optimizations for Next.js 15
-    environment:
-      variables:
-        AMPLIFY_MONOREPO_APP_ROOT: "/"
-        AMPLIFY_DIFF_DEPLOY: "true"
-        AMPLIFY_SKIP_INSTALL: "false"
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+            - npx prisma generate
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+          - .next/cache/**/*
   EOT
 
   enable_auto_branch_creation = false
