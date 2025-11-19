@@ -55,7 +55,7 @@ export default function EditBranchPage() {
         
         setFormData({
           title: branch.title || '',
-          type: branch.branchTypeId || '',
+          type: branch.branchType?.name || '',
           description: branch.description || '',
           dateOccurred: branch.dateOccurred ? branch.dateOccurred.split('T')[0] : '',
         });
