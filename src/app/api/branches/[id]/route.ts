@@ -86,7 +86,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, description, dateOccurred, metadata } = body;
+    const { title, description, dateOccurred, metadata, photos, branchTypeId } = body;
 
     // Update branch
     const updatedBranch = await prisma.branch.update({
@@ -96,6 +96,7 @@ export async function PUT(
         description,
         dateOccurred: dateOccurred ? new Date(dateOccurred) : null,
         metadata,
+        ...(branchTypeId && { branchTypeId }),
       },
       include: {
         branchType: true,
@@ -106,10 +107,47 @@ export async function PUT(
             avatarUrl: true,
           },
         },
+        media: true,
       },
     });
 
-    return NextResponse.json(updatedBranch);
+    // Handle photos if provided
+    if (photos && Array.isArray(photos)) {
+      // Delete existing media
+      await prisma.branchMedia.deleteMany({
+        where: { branchId: id },
+      });
+
+      // Create new media records
+      if (photos.length > 0) {
+        await prisma.branchMedia.createMany({
+          data: photos.map((photoUrl: string) => ({
+            branchId: id,
+            mediaType: 'PHOTO',
+            url: photoUrl, // base64 data URL for local dev, S3 URL for production
+            uploadedBy: userId,
+          })),
+        });
+      }
+    }
+
+    // Fetch updated branch with media
+    const branchWithMedia = await prisma.branch.findUnique({
+      where: { id },
+      include: {
+        branchType: true,
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+        media: true,
+      },
+    });
+
+    return NextResponse.json(branchWithMedia);
   } catch (error) {
     console.error('Error updating branch:', error);
     return NextResponse.json(

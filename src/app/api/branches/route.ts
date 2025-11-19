@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       description,
       dateOccurred,
       metadata,
+      photos,
     } = body;
 
     // Validate required fields
@@ -78,8 +79,39 @@ export async function POST(request: Request) {
             avatarUrl: true,
           },
         },
+        media: true,
       },
     });
+
+    // Handle photos if provided
+    if (photos && Array.isArray(photos) && photos.length > 0) {
+      await prisma.branchMedia.createMany({
+        data: photos.map((photoUrl: string) => ({
+          branchId: branch.id,
+          mediaType: 'PHOTO',
+          url: photoUrl, // base64 data URL for local dev, S3 URL for production
+          uploadedBy: userId,
+        })),
+      });
+
+      // Fetch branch with media
+      const branchWithMedia = await prisma.branch.findUnique({
+        where: { id: branch.id },
+        include: {
+          branchType: true,
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              avatarUrl: true,
+            },
+          },
+          media: true,
+        },
+      });
+
+      return NextResponse.json(branchWithMedia, { status: 201 });
+    }
 
     return NextResponse.json(branch, { status: 201 });
   } catch (error) {

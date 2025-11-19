@@ -55,11 +55,12 @@ export default function EditBranchPage() {
         
         setFormData({
           title: branch.title || '',
-          type: branch.type || '',
+          type: branch.branchTypeId || '',
           description: branch.description || '',
           dateOccurred: branch.dateOccurred ? branch.dateOccurred.split('T')[0] : '',
         });
-        setPhotos(branch.photos || []);
+        // Convert media array to photos URL array
+        setPhotos(branch.media ? branch.media.map((m: any) => m.url) : []);
       } catch (err) {
         console.error('Error loading data:', err);
         setError('Failed to load branch data');
@@ -164,7 +165,10 @@ export default function EditBranchPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          ...formData,
+          title: formData.title,
+          description: formData.description,
+          dateOccurred: formData.dateOccurred,
+          branchTypeId: formData.type,
           photos: photos,
         }),
       });
