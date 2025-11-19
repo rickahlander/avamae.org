@@ -37,23 +37,34 @@ export default function AddBranchPage() {
   });
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load tree to get the name and parent branch info
+    // Load tree from API to get the name and parent branch info
     const treeId = params.id as string;
-    const treeData = localStorage.getItem(`tree-${treeId}`);
-    if (treeData) {
-      const tree = JSON.parse(treeData);
-      setTreeName(tree.rootPersonName);
+    
+    const fetchTree = async () => {
+      try {
+        const response = await fetch(`/api/trees/${treeId}`);
+        if (!response.ok) throw new Error('Failed to load tree');
+        
+        const tree = await response.json();
+        setTreeName(tree.rootPersonName);
 
-      // If adding to a specific branch, find it
-      if (parentBranchId && tree.branches) {
-        const parentBranch = tree.branches.find((b: any) => b.id === parentBranchId);
-        if (parentBranch) {
-          setParentBranchTitle(parentBranch.title);
+        // If adding to a specific branch, find it
+        if (parentBranchId && tree.branches) {
+          const parentBranch = tree.branches.find((b: any) => b.id === parentBranchId);
+          if (parentBranch) {
+            setParentBranchTitle(parentBranch.title);
+          }
         }
+      } catch (err) {
+        console.error('Error loading tree:', err);
+        setError('Failed to load tree');
       }
-    }
+    };
+
+    fetchTree();
   }, [params.id, parentBranchId]);
 
   const handleChange = (field: string) => (e: any) => {
@@ -63,72 +74,42 @@ export default function AddBranchPage() {
     }));
   };
 
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-
-          // Resize to max 800px width/height while maintaining aspect ratio
-          let width = img.width;
-          let height = img.height;
-          const maxSize = 800;
-
-          if (width > height && width > maxSize) {
-            height = (height * maxSize) / width;
-            width = maxSize;
-          } else if (height > maxSize) {
-            width = (width * maxSize) / height;
-            height = maxSize;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          ctx?.drawImage(img, 0, 0, width, height);
-
-          // Compress to JPEG with 0.7 quality
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          resolve(compressedDataUrl);
-        };
-        img.onerror = reject;
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    // TODO (Production): Replace with S3 upload
-    // 1. Upload to S3 using presigned URL or direct upload with AWS SDK
-    // 2. Store S3 URL in database instead of base64
-    // 3. Use CloudFront for CDN delivery
-    // 4. Implement image optimization (resize, compress) before upload
-    // 5. Add security: signed URLs with expiration for private photos
-    //
-    // Current (MVP/Local): Base64 encoding with compression for localStorage
-
     setError(''); // Clear any previous errors
+    setLoading(true);
 
-    for (const file of Array.from(files)) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit before compression
-        setError('Photo size must be less than 10MB');
-        continue;
-      }
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          setError('Photo size must be less than 10MB');
+          continue;
+        }
 
-      try {
-        const compressedPhoto = await compressImage(file);
-        setPhotos(prev => [...prev, compressedPhoto]);
-      } catch (err) {
-        console.error('Error compressing image:', err);
-        setError('Failed to process image. Please try a different photo.');
+        // Upload to server (S3 in production, local in dev)
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'branches');
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload photo');
+        }
+
+        const data = await response.json();
+        setPhotos(prev => [...prev, data.url]);
       }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      setError('Failed to upload image. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -136,68 +117,55 @@ export default function AddBranchPage() {
     setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     // Validation
     if (!formData.title.trim()) {
       setError('Please enter a title');
+      setLoading(false);
       return;
     }
     if (!formData.type) {
       setError('Please select a branch type');
+      setLoading(false);
       return;
     }
 
-    // Load existing tree
     const treeId = params.id as string;
-    const treeData = localStorage.getItem(`tree-${treeId}`);
 
-    if (!treeData) {
-      setError('Tree not found');
-      return;
-    }
-
-    const tree = JSON.parse(treeData);
-
-    // Create new branch
-    const newBranch = {
-      id: Date.now().toString(),
-      ...formData,
-      parentBranchId: parentBranchId || null,
-      photos: photos,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Add branch to tree
-    tree.branches = tree.branches || [];
-    tree.branches.push(newBranch);
-
-    // Save updated tree
     try {
-      localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
+      // Create new branch via API
+      const response = await fetch('/api/branches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          treeId,
+          title: formData.title,
+          branchTypeId: formData.type,
+          description: formData.description || null,
+          dateOccurred: formData.dateOccurred || null,
+          parentBranchId: parentBranchId || null,
+          photos: photos,
+        }),
+      });
 
-      // Also update in trees list
-      const trees = JSON.parse(localStorage.getItem('trees') || '[]');
-      const treeIndex = trees.findIndex((t: any) => t.id === treeId);
-      if (treeIndex !== -1) {
-        trees[treeIndex] = tree;
-        localStorage.setItem('trees', JSON.stringify(trees));
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create branch');
       }
 
       // Redirect back to tree view
       router.push(`/trees/${treeId}`);
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'QuotaExceededError') {
-        setError(
-          'Storage limit exceeded. Please remove some photos or try uploading smaller images. ' +
-          'LocalStorage has a ~5-10MB limit. Consider removing photos from other trees or branches.'
-        );
-      } else {
-        setError('Failed to save branch. Please try again.');
-      }
-      console.error('Error saving branch:', err);
+      console.error('Error creating branch:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save branch. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
