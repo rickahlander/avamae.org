@@ -52,7 +52,7 @@ resource "aws_amplify_app" "main" {
       phases:
         preBuild:
           commands:
-            - npm ci
+            - npm ci --include=dev
             - npx prisma generate
         build:
           commands:
