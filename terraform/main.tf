@@ -99,18 +99,29 @@ module "s3" {
   aws_region  = var.aws_region
 }
 
-# AWS Amplify for Next.js Hosting (with auto-build from GitHub)
-module "amplify" {
-  source = "./modules/amplify"
+# AWS App Runner for Next.js Hosting (Docker-based)
+module "apprunner" {
+  source = "./modules/apprunner"
 
-  environment       = var.environment
-  domain_name       = var.domain_name
-  repository_url    = var.repository_url
-  github_token      = var.github_token
-  database_url      = module.rds.database_url
-  s3_bucket_name    = module.s3.media_bucket_name
-  cloudfront_domain = module.s3.cloudfront_domain
+  environment            = var.environment
+  domain_name            = var.domain_name
+  repository_url         = var.repository_url
+  github_token           = var.github_token
+  database_url           = module.rds.database_url
+  s3_bucket_name         = module.s3.media_bucket_name
+  cloudfront_domain      = module.s3.cloudfront_domain
+  aws_region             = var.aws_region
+  app_url                = "https://${var.domain_name}"
+  clerk_publishable_key  = var.clerk_publishable_key
+  clerk_secret_key       = var.clerk_secret_key
+  clerk_webhook_secret   = var.clerk_webhook_secret
 }
+
+# AWS Amplify - DISABLED (switched to App Runner)
+# module "amplify" {
+#   source = "./modules/amplify"
+#   ...
+# }
 
 # SES for Email - REMOVED (Clerk handles all authentication emails)
 # module "ses" {
@@ -131,6 +142,23 @@ variable "repository_url" {
 
 variable "github_token" {
   description = "GitHub personal access token for Amplify access"
+  type        = string
+  sensitive   = true
+}
+
+variable "clerk_publishable_key" {
+  description = "Clerk publishable key"
+  type        = string
+}
+
+variable "clerk_secret_key" {
+  description = "Clerk secret key"
+  type        = string
+  sensitive   = true
+}
+
+variable "clerk_webhook_secret" {
+  description = "Clerk webhook secret"
   type        = string
   sensitive   = true
 }
@@ -161,14 +189,14 @@ output "cloudfront_domain" {
   value       = module.s3.cloudfront_domain
 }
 
-output "amplify_app_id" {
-  description = "AWS Amplify application ID"
-  value       = module.amplify.app_id
+output "apprunner_service_url" {
+  description = "App Runner service URL"
+  value       = module.apprunner.service_url
 }
 
-output "amplify_default_domain" {
-  description = "AWS Amplify default domain"
-  value       = module.amplify.default_domain
+output "ecr_repository_url" {
+  description = "ECR repository URL for Docker images"
+  value       = module.apprunner.ecr_repository_url
 }
 
 # SES outputs removed - Clerk handles authentication emails
