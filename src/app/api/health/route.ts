@@ -5,6 +5,8 @@ import { NextResponse } from 'next/server';
  * Returns 200 OK if the application is running
  */
 export async function GET() {
+  console.log('[HEALTH CHECK] Health endpoint called at:', new Date().toISOString());
+  
   return NextResponse.json(
     {
       status: 'healthy',

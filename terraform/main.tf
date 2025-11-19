@@ -99,14 +99,19 @@ module "s3" {
   aws_region  = var.aws_region
 }
 
-# AWS App Runner for Next.js Hosting (Docker-based)
-module "apprunner" {
-  source = "./modules/apprunner"
+# ECR Repository for Docker images
+module "ecr" {
+  source = "./modules/ecr"
+  
+  environment = var.environment
+}
+
+# AWS ECS for Next.js Hosting (Fargate)
+module "ecs" {
+  source = "./modules/ecs"
 
   environment            = var.environment
   domain_name            = var.domain_name
-  repository_url         = var.repository_url
-  github_token           = var.github_token
   database_url           = module.rds.database_url
   s3_bucket_name         = module.s3.media_bucket_name
   cloudfront_domain      = module.s3.cloudfront_domain
@@ -115,11 +120,20 @@ module "apprunner" {
   clerk_publishable_key  = var.clerk_publishable_key
   clerk_secret_key       = var.clerk_secret_key
   clerk_webhook_secret   = var.clerk_webhook_secret
+  vpc_id                 = module.rds.vpc_id
+  subnet_ids             = module.rds.subnet_ids
+  rds_security_group_id  = module.rds.security_group_id
+  ecr_repository_url     = module.ecr.repository_url
 }
 
-# AWS Amplify - DISABLED (switched to App Runner)
+# AWS Amplify - DISABLED (switched to ECS)
 # module "amplify" {
 #   source = "./modules/amplify"
+#   ...
+# }
+
+# AWS App Runner - DISABLED (switched to ECS)  
+# module "apprunner" {
 #   ...
 # }
 
@@ -136,14 +150,16 @@ module "apprunner" {
 # ============================================================================
 
 variable "repository_url" {
-  description = "GitHub repository URL (e.g., https://github.com/username/repo)"
+  description = "GitHub repository URL (e.g., https://github.com/username/repo) - Not used by App Runner"
   type        = string
+  default     = ""
 }
 
 variable "github_token" {
-  description = "GitHub personal access token for Amplify access"
+  description = "GitHub personal access token - Not used by App Runner"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "clerk_publishable_key" {
@@ -189,14 +205,19 @@ output "cloudfront_domain" {
   value       = module.s3.cloudfront_domain
 }
 
-output "apprunner_service_url" {
-  description = "App Runner service URL"
-  value       = module.apprunner.service_url
+output "alb_dns_name" {
+  description = "Application Load Balancer DNS name"
+  value       = module.ecs.alb_dns_name
+}
+
+output "service_url" {
+  description = "ECS service URL"
+  value       = module.ecs.service_url
 }
 
 output "ecr_repository_url" {
   description = "ECR repository URL for Docker images"
-  value       = module.apprunner.ecr_repository_url
+  value       = module.ecr.repository_url
 }
 
 # SES outputs removed - Clerk handles authentication emails

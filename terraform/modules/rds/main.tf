@@ -132,3 +132,18 @@ output "database_id" {
   description = "RDS instance ID"
   value       = aws_db_instance.postgres.id
 }
+
+output "vpc_id" {
+  description = "VPC ID where RDS is deployed"
+  value       = data.aws_vpc.default.id
+}
+
+output "subnet_ids" {
+  description = "Subnet IDs where RDS is deployed"
+  value       = data.aws_subnets.default.ids
+}
+
+output "security_group_id" {
+  description = "RDS security group ID"
+  value       = aws_security_group.rds.id
+}
