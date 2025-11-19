@@ -108,7 +108,7 @@ export default function BranchViewPage() {
   const branchTypeConfig = getBranchTypeConfig(branch.branchType.name);
   const iconString = branch.branchType.icon; // String emoji from DB
   const IconComponent = branchTypeConfig?.icon; // React component from config
-  const color = branch.branchType.color || branchTypeConfig?.color || '#8FBC8F';
+  const color = branch.branchType.color || '#8FBC8F';
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
