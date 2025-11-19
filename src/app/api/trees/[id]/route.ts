@@ -66,7 +66,14 @@ export async function GET(
     }
     // Unauthenticated users can view public trees (tree-level visibility TBD)
 
-    return NextResponse.json(tree);
+    // Transform the data to match what TreeVisualization expects
+    const transformedTree = {
+      ...tree,
+      rootPersonProfilePhoto: tree.rootPersonPhotoUrl,
+      rootPersonPhotos: tree.media?.map(m => m.url) || [],
+    };
+
+    return NextResponse.json(transformedTree);
   } catch (error) {
     console.error('Error fetching tree:', error);
     return NextResponse.json(

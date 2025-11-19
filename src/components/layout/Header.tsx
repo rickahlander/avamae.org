@@ -173,30 +173,30 @@ export default function Header() {
           </MenuItem>
         ))}
         
-        {!isSignedIn && (
-          <>
-            <MenuItem
-              component={Link}
-              href="/sign-in"
-              onClick={handleMobileMenuClose}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Login />
-                Sign In
-              </Box>
-            </MenuItem>
-            <MenuItem
-              component={Link}
-              href="/sign-up"
-              onClick={handleMobileMenuClose}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PersonAdd />
-                Sign Up
-              </Box>
-            </MenuItem>
-          </>
-        )}
+        {!isSignedIn && [
+          <MenuItem
+            key="sign-in"
+            component={Link}
+            href="/sign-in"
+            onClick={handleMobileMenuClose}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Login />
+              Sign In
+            </Box>
+          </MenuItem>,
+          <MenuItem
+            key="sign-up"
+            component={Link}
+            href="/sign-up"
+            onClick={handleMobileMenuClose}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PersonAdd />
+              Sign Up
+            </Box>
+          </MenuItem>
+        ]}
       </Menu>
     </AppBar>
   );

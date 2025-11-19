@@ -45,9 +45,9 @@ export default function EditTreePage() {
           rootPersonDeathDate: tree.rootPersonDeathDate ? tree.rootPersonDeathDate.split('T')[0] : '',
           rootPersonStory: tree.rootPersonStory || '',
         });
-        setProfilePhoto(tree.rootPersonPhotoUrl || '');
-        // Convert media array to photos URL array
-        setPhotos(tree.media ? tree.media.map((m: any) => m.url) : []);
+        setProfilePhoto(tree.rootPersonProfilePhoto || tree.rootPersonPhotoUrl || '');
+        // Use transformed photos array
+        setPhotos(tree.rootPersonPhotos || []);
       } catch (err) {
         console.error('Error loading tree:', err);
         setError('Failed to load tree data');
