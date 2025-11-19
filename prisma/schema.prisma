@@ -35,6 +35,7 @@ model User {
   connections1       MemberConnection[]  @relation("Connection1")
   connections2       MemberConnection[]  @relation("Connection2")
   branchMedia        BranchMedia[]
+  treeMedia          TreeMedia[]         @relation("TreeMediaUploader")
   storyMedia         StoryMedia[]
   branchPermissions  BranchPermission[]
   grantedPermissions BranchPermission[]  @relation("PermissionGranter")
@@ -68,6 +69,7 @@ model Tree {
   stories            Story[]
   invitations        Invitation[]
   memberConnections  MemberConnection[]
+  media              TreeMedia[]
 
   @@index([slug])
   @@index([ownerId])
@@ -222,6 +224,27 @@ model BranchMedia {
 enum MediaType {
   PHOTO
   VIDEO
+}
+
+// ============================================================================
+// Tree Media (Additional Photos)
+// ============================================================================
+
+model TreeMedia {
+  id         String    @id @default(uuid())
+  treeId     String    @map("tree_id")
+  mediaType  MediaType @map("media_type")
+  url        String    @db.Text // Allow large base64 strings for local dev
+  caption    String?
+  uploadedBy String    @map("uploaded_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  tree       Tree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  uploader   User      @relation("TreeMediaUploader", fields: [uploadedBy], references: [id])
+
+  @@index([treeId])
+  @@map("tree_media")
 }
 
 // ============================================================================

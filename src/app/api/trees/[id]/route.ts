@@ -22,6 +22,7 @@ export async function GET(
             avatarUrl: true,
           },
         },
+        media: true,
         branches: {
           include: {
             branchType: true,
@@ -32,6 +33,7 @@ export async function GET(
                 avatarUrl: true,
               },
             },
+            media: true,
           },
           orderBy: {
             dateOccurred: 'asc',
@@ -100,6 +102,7 @@ export async function PUT(
       rootPersonDeathDate,
       rootPersonStory,
       rootPersonPhotoUrl,
+      rootPersonPhotos,
       moderationMode,
     } = body;
 
@@ -126,10 +129,46 @@ export async function PUT(
             avatarUrl: true,
           },
         },
+        media: true,
       },
     });
 
-    return NextResponse.json(updatedTree);
+    // Handle additional photos if provided
+    if (rootPersonPhotos && Array.isArray(rootPersonPhotos)) {
+      // Delete existing media
+      await prisma.treeMedia.deleteMany({
+        where: { treeId: id },
+      });
+
+      // Create new media records
+      if (rootPersonPhotos.length > 0) {
+        await prisma.treeMedia.createMany({
+          data: rootPersonPhotos.map((photoUrl: string) => ({
+            treeId: id,
+            mediaType: 'PHOTO',
+            url: photoUrl, // base64 data URL for local dev, S3 URL for production
+            uploadedBy: userId,
+          })),
+        });
+      }
+    }
+
+    // Fetch updated tree with media
+    const treeWithMedia = await prisma.tree.findUnique({
+      where: { id },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
+        media: true,
+      },
+    });
+
+    return NextResponse.json(treeWithMedia);
   } catch (error) {
     console.error('Error updating tree:', error);
     return NextResponse.json(

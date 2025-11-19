@@ -45,8 +45,9 @@ export default function EditTreePage() {
           rootPersonDeathDate: tree.rootPersonDeathDate ? tree.rootPersonDeathDate.split('T')[0] : '',
           rootPersonStory: tree.rootPersonStory || '',
         });
-        setProfilePhoto(tree.rootPersonProfilePhoto || '');
-        setPhotos(tree.rootPersonPhotos || []);
+        setProfilePhoto(tree.rootPersonPhotoUrl || '');
+        // Convert media array to photos URL array
+        setPhotos(tree.media ? tree.media.map((m: any) => m.url) : []);
       } catch (err) {
         console.error('Error loading tree:', err);
         setError('Failed to load tree data');
@@ -168,8 +169,8 @@ export default function EditTreePage() {
         },
         body: JSON.stringify({
           ...formData,
-          rootPersonProfilePhoto: profilePhoto,
-          rootPersonPhotos: photos,
+          rootPersonPhotoUrl: profilePhoto,
+          rootPersonPhotos: photos, // Additional photos stored in TreeMedia
         }),
       });
 
