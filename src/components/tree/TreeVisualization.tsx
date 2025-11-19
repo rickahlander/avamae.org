@@ -18,6 +18,7 @@ interface Branch {
   dateOccurred?: string;
   parentBranchId?: string | null;
   description?: string;
+  url?: string;
   media?: Array<{
     url: string;
     caption?: string | null;
@@ -30,6 +31,7 @@ interface TreeData {
   rootPersonBirthDate?: string;
   rootPersonDeathDate?: string;
   rootPersonStory?: string;
+  url?: string;
   rootPersonProfilePhoto?: string;
   rootPersonPhotos?: string[];
   branches?: Branch[];
@@ -84,6 +86,7 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = fa
       <Paper
         data-branch-id={branch.id}
         elevation={1}
+        onClick={() => router.push(`/trees/${treeId}/branches/${branch.id}`)}
         sx={{
           p: 2,
           borderRadius: 2,
@@ -93,6 +96,7 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = fa
           bgcolor: 'background.paper',
           flexShrink: 0,
           transition: 'all 0.3s ease',
+          cursor: 'pointer',
           '&:hover': {
             transform: level === 0 ? 'translateY(-4px)' : 'translateX(4px)',
             boxShadow: 3,
@@ -131,6 +135,32 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = fa
             }}
           >
             {branch.description}
+          </Typography>
+        )}
+
+        {branch.url && (
+          <Typography
+            variant="caption"
+            sx={{
+              mb: 0.5,
+              fontSize: '0.7rem',
+              display: 'block',
+            }}
+          >
+            <a
+              href={branch.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                color: '#1976d2',
+                textDecoration: 'none',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+            >
+              Visit Website →
+            </a>
           </Typography>
         )}
 
@@ -202,7 +232,10 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = fa
             <Tooltip title="Edit branch">
               <IconButton
                 size="small"
-                onClick={() => router.push(`/trees/${treeId}/edit-branch/${branch.id}`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/trees/${treeId}/edit-branch/${branch.id}`);
+                }}
                 sx={{
                   bgcolor: 'primary.main',
                   color: 'white',
@@ -220,7 +253,10 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = fa
             <Tooltip title="Add sub-branch">
               <IconButton
                 size="small"
-                onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`);
+                }}
                 sx={{
                   bgcolor: 'secondary.main',
                   color: 'white',
@@ -238,7 +274,10 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = fa
             <Tooltip title="Delete branch">
               <IconButton
                 size="small"
-                onClick={handleDeleteClick}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick();
+                }}
                 sx={{
                   bgcolor: 'error.main',
                   color: 'white',
@@ -498,6 +537,7 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
           <Paper
             ref={rootCardRef}
             elevation={4}
+            onClick={() => router.push(`/trees/${tree.id}/view`)}
             sx={{
               p: 4,
               borderRadius: 4,
@@ -510,13 +550,22 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
               flexDirection: { xs: 'column', md: 'row' },
               gap: 3,
               alignItems: 'center',
+              cursor: 'pointer',
+              transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: 8,
+              },
             }}
           >
             {canEdit && (
               <Tooltip title="Edit tree">
                 <IconButton
                   size="small"
-                  onClick={() => router.push(`/trees/${tree.id}/edit-tree`)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    router.push(`/trees/${tree.id}/edit-tree`);
+                  }}
                   sx={{
                     position: 'absolute',
                     top: 16,
@@ -628,6 +677,27 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                 >
                   {tree.rootPersonStory}
                 </Typography>
+              )}
+
+              {tree.url && (
+                <Box sx={{ mt: 2 }}>
+                  <a
+                    href={tree.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      color: 'white',
+                      textDecoration: 'none',
+                      fontSize: '0.9rem',
+                      fontWeight: 500,
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                  >
+                    View Memorial / Obituary →
+                  </a>
+                </Box>
               )}
 
               {/* Stats */}

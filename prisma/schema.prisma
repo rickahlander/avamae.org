@@ -56,6 +56,7 @@ model Tree {
   rootPersonBirthDate DateTime? @map("root_person_birth_date")
   rootPersonDeathDate DateTime? @map("root_person_death_date")
   rootPersonStory    String?  @map("root_person_story") @db.Text
+  url                String?  // Website/link (obituary, memorial page, etc.)
   moderationMode     ModerationMode @default(MODERATED) @map("moderation_mode")
   ownerId            String   @map("owner_id")
   createdAt          DateTime @default(now()) @map("created_at")
@@ -145,6 +146,7 @@ model Branch {
   branchTypeId    String    @map("branch_type_id")
   title           String
   description     String?   @db.Text
+  url             String?   // Website/link for this branch
   dateOccurred    DateTime? @map("date_occurred")
   createdByUserId String    @map("created_by_user_id")
   approved        Boolean   @default(false)

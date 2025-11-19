@@ -33,6 +33,7 @@ export default function AddBranchPage() {
     title: '',
     type: '',
     description: '',
+    url: '',
     dateOccurred: '',
   });
   const [photos, setPhotos] = useState<string[]>([]);
@@ -148,6 +149,7 @@ export default function AddBranchPage() {
           title: formData.title,
           branchTypeId: formData.type,
           description: formData.description || null,
+          url: formData.url || null,
           dateOccurred: formData.dateOccurred || null,
           parentBranchId: parentBranchId || null,
           photos: photos,
@@ -252,6 +254,17 @@ export default function AddBranchPage() {
               value={formData.description}
               onChange={handleChange('description')}
               helperText="Share the story of this impact"
+              variant="outlined"
+            />
+
+            <TextField
+              label="Website URL"
+              type="url"
+              fullWidth
+              value={formData.url}
+              onChange={handleChange('url')}
+              placeholder="https://example.com"
+              helperText="Link to organization, obituary, or related website"
               variant="outlined"
             />
 

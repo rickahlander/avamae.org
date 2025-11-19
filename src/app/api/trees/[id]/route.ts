@@ -108,6 +108,7 @@ export async function PUT(
       rootPersonBirthDate,
       rootPersonDeathDate,
       rootPersonStory,
+      url,
       rootPersonPhotoUrl,
       rootPersonPhotos,
       moderationMode,
@@ -125,6 +126,7 @@ export async function PUT(
           ? new Date(rootPersonDeathDate)
           : null,
         rootPersonStory,
+        url,
         rootPersonPhotoUrl,
         moderationMode,
       },

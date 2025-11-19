@@ -25,6 +25,7 @@ export default function EditTreePage() {
     rootPersonBirthDate: '',
     rootPersonDeathDate: '',
     rootPersonStory: '',
+    url: '',
   });
   const [profilePhoto, setProfilePhoto] = useState<string>('');
   const [photos, setPhotos] = useState<string[]>([]);
@@ -44,6 +45,7 @@ export default function EditTreePage() {
           rootPersonBirthDate: tree.rootPersonBirthDate ? tree.rootPersonBirthDate.split('T')[0] : '',
           rootPersonDeathDate: tree.rootPersonDeathDate ? tree.rootPersonDeathDate.split('T')[0] : '',
           rootPersonStory: tree.rootPersonStory || '',
+          url: tree.url || '',
         });
         setProfilePhoto(tree.rootPersonProfilePhoto || tree.rootPersonPhotoUrl || '');
         // Use transformed photos array
@@ -385,6 +387,17 @@ export default function EditTreePage() {
               value={formData.rootPersonStory}
               onChange={handleChange('rootPersonStory')}
               helperText="Share the story of this person's life and legacy"
+              variant="outlined"
+            />
+
+            <TextField
+              label="Website URL"
+              type="url"
+              fullWidth
+              value={formData.url}
+              onChange={handleChange('url')}
+              placeholder="https://example.com"
+              helperText="Link to obituary, memorial page, or related website"
               variant="outlined"
             />
 

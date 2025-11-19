@@ -86,7 +86,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, description, dateOccurred, metadata, photos, branchTypeId } = body;
+    const { title, description, url, dateOccurred, metadata, photos, branchTypeId } = body;
 
     // Look up branch type by name or ID if provided
     let resolvedBranchTypeId = branchTypeId;
@@ -111,6 +111,7 @@ export async function PUT(
       data: {
         title,
         description,
+        url,
         dateOccurred: dateOccurred ? new Date(dateOccurred) : null,
         metadata,
         ...(resolvedBranchTypeId && { branchTypeId: resolvedBranchTypeId }),

@@ -32,6 +32,7 @@ export default function EditBranchPage() {
     title: '',
     type: '',
     description: '',
+    url: '',
     dateOccurred: '',
   });
   const [photos, setPhotos] = useState<string[]>([]);
@@ -57,6 +58,7 @@ export default function EditBranchPage() {
           title: branch.title || '',
           type: branch.branchType?.name || '',
           description: branch.description || '',
+          url: branch.url || '',
           dateOccurred: branch.dateOccurred ? branch.dateOccurred.split('T')[0] : '',
         });
         // Convert media array to photos URL array
@@ -184,6 +186,7 @@ export default function EditBranchPage() {
         body: JSON.stringify({
           title: formData.title,
           description: formData.description,
+          url: formData.url,
           dateOccurred: formData.dateOccurred,
           branchTypeId: formData.type,
           photos: photos,
@@ -282,6 +285,17 @@ export default function EditBranchPage() {
               value={formData.description}
               onChange={handleChange('description')}
               helperText="Share the story of this impact"
+              variant="outlined"
+            />
+
+            <TextField
+              label="Website URL"
+              type="url"
+              fullWidth
+              value={formData.url}
+              onChange={handleChange('url')}
+              placeholder="https://example.com"
+              helperText="Link to organization, obituary, or related website"
               variant="outlined"
             />
 
