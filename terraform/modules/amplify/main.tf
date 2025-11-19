@@ -67,18 +67,23 @@ resource "aws_amplify_app" "main" {
               - node_modules/**/*
               - .next/cache/**/*
         appRoot: /
+    # Performance optimizations for Next.js 15
+    environment:
+      variables:
+        AMPLIFY_MONOREPO_APP_ROOT: "/"
+        AMPLIFY_DIFF_DEPLOY: "true"
+        AMPLIFY_SKIP_INSTALL: "false"
   EOT
 
   enable_auto_branch_creation = false
   enable_branch_auto_build    = true
 
-  # Environment variables
+  # Environment variables (AWS_* variables must be added after creation)
   environment_variables = {
-    NODE_ENV              = "production"
-    NEXTAUTH_URL          = "https://${var.domain_name}"
-    AWS_REGION            = data.aws_region.current.name
-    AWS_S3_BUCKET         = var.s3_bucket_name
-    AWS_CLOUDFRONT_DOMAIN = var.cloudfront_domain
+    NODE_ENV     = "production"
+    STORAGE_TYPE = "s3"
+    # AWS credentials and other vars must be added manually in Amplify Console
+    # Amplify doesn't allow AWS_* prefix during initial creation
   }
 
   custom_rule {

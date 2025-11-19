@@ -17,7 +17,8 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
 
   default_tags {
     tags = {
@@ -36,6 +37,12 @@ variable "aws_region" {
   description = "AWS region for resources"
   type        = string
   default     = "us-east-1"
+}
+
+variable "aws_profile" {
+  description = "AWS CLI profile to use"
+  type        = string
+  default     = "default"
 }
 
 variable "environment" {
@@ -73,7 +80,7 @@ variable "db_password" {
 # Modules
 # ============================================================================
 
-# RDS PostgreSQL Database
+# RDS PostgreSQL Database (Cost-Optimized)
 module "rds" {
   source = "./modules/rds"
 
@@ -83,46 +90,47 @@ module "rds" {
   db_password  = var.db_password
 }
 
-# S3 Buckets for Media Storage
+# S3 Buckets for Media Storage (with lifecycle policies)
 module "s3" {
   source = "./modules/s3"
 
   environment = var.environment
   domain_name = var.domain_name
+  aws_region  = var.aws_region
 }
 
-# AWS Amplify for Next.js Hosting
+# AWS Amplify for Next.js Hosting (with auto-build from GitHub)
 module "amplify" {
   source = "./modules/amplify"
 
-  environment      = var.environment
-  domain_name      = var.domain_name
-  repository_url   = var.repository_url
-  github_token     = var.github_token
-  database_url     = module.rds.database_url
-  s3_bucket_name   = module.s3.media_bucket_name
+  environment       = var.environment
+  domain_name       = var.domain_name
+  repository_url    = var.repository_url
+  github_token      = var.github_token
+  database_url      = module.rds.database_url
+  s3_bucket_name    = module.s3.media_bucket_name
   cloudfront_domain = module.s3.cloudfront_domain
 }
 
-# SES for Email
-module "ses" {
-  source = "./modules/ses"
-
-  environment = var.environment
-  domain_name = var.domain_name
-}
+# SES for Email - REMOVED (Clerk handles all authentication emails)
+# module "ses" {
+#   source = "./modules/ses"
+#
+#   environment = var.environment
+#   domain_name = var.domain_name
+# }
 
 # ============================================================================
 # Additional Variables for Amplify
 # ============================================================================
 
 variable "repository_url" {
-  description = "GitHub repository URL"
+  description = "GitHub repository URL (e.g., https://github.com/username/repo)"
   type        = string
 }
 
 variable "github_token" {
-  description = "GitHub personal access token"
+  description = "GitHub personal access token for Amplify access"
   type        = string
   sensitive   = true
 }
@@ -163,7 +171,8 @@ output "amplify_default_domain" {
   value       = module.amplify.default_domain
 }
 
-output "ses_smtp_endpoint" {
-  description = "SES SMTP endpoint"
-  value       = module.ses.smtp_endpoint
-}
+# SES outputs removed - Clerk handles authentication emails
+# output "ses_smtp_endpoint" {
+#   description = "SES SMTP endpoint"
+#   value       = module.ses.smtp_endpoint
+# }

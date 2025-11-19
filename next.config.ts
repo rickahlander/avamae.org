@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.amazonaws.com",
       },
+      {
+        protocol: "https",
+        hostname: "**.cloudfront.net",
+      },
     ],
   },
   experimental: {
@@ -14,6 +18,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
+  // Enable standalone output for optimized production builds
+  output: "standalone",
 };
 
 export default nextConfig;

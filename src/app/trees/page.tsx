@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import {
   Container,
   Typography,
@@ -25,23 +26,46 @@ interface TreeData {
   rootPersonBirthDate?: string;
   rootPersonDeathDate?: string;
   rootPersonStory?: string;
-  branches?: any[];
+  _count?: {
+    branches: number;
+    members: number;
+  };
+  owner: {
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
+  };
   createdAt: string;
 }
 
 export default function TreesPage() {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
   const [trees, setTrees] = useState<TreeData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    // Load all trees from localStorage
-    const treesData = localStorage.getItem('trees');
-    if (treesData) {
-      const parsedTrees = JSON.parse(treesData);
-      setTrees(parsedTrees);
-    }
-    setLoading(false);
+    // Fetch trees from API
+    const fetchTrees = async () => {
+      try {
+        const response = await fetch('/api/trees?view=public');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch trees');
+        }
+        
+        const data = await response.json();
+        setTrees(data);
+      } catch (err: any) {
+        console.error('Error fetching trees:', err);
+        setError(err.message || 'Failed to load trees');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrees();
   }, []);
 
   const formatDate = (dateString?: string) => {
@@ -50,7 +74,7 @@ export default function TreesPage() {
   };
 
   const getBranchCount = (tree: TreeData) => {
-    return tree.branches?.length || 0;
+    return tree._count?.branches || 0;
   };
 
   return (
@@ -64,18 +88,26 @@ export default function TreesPage() {
           Discover how lives continue to bless others for generations
         </Typography>
 
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          component={Link}
-          href="/create-tree"
-          size="large"
-        >
-          Create Your Tree
-        </Button>
+        {isSignedIn && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            component={Link}
+            href="/create-tree"
+            size="large"
+          >
+            Create Your Tree
+          </Button>
+        )}
       </Box>
 
       {/* Trees Grid */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 4 }}>
+          {error}
+        </Alert>
+      )}
+      
       {loading ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
           <Typography color="text.secondary">Loading trees...</Typography>
@@ -95,17 +127,22 @@ export default function TreesPage() {
             No memorial trees yet
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            Be the first to create a memorial tree and celebrate a life that continues to bless others
+            {isSignedIn 
+              ? 'Be the first to create a memorial tree and celebrate a life that continues to bless others'
+              : 'Sign in to create a memorial tree and celebrate a life that continues to bless others'
+            }
           </Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            component={Link}
-            href="/create-tree"
-            size="large"
-          >
-            Create the First Tree
-          </Button>
+          {isSignedIn && (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              component={Link}
+              href="/create-tree"
+              size="large"
+            >
+              Create the First Tree
+            </Button>
+          )}
         </Paper>
       ) : (
         <>
@@ -201,13 +238,6 @@ export default function TreesPage() {
         </>
       )}
 
-      {/* Info Box */}
-      <Box sx={{ mt: 6, p: 3, bgcolor: 'secondary.light', borderRadius: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          <strong>Coming soon:</strong> Search and filter trees, follow updates, connect with community members,
-          and see impact statistics across all memorial trees.
-        </Typography>
-      </Box>
     </Container>
   );
 }

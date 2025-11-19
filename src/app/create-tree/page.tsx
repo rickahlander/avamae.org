@@ -12,9 +12,11 @@ import {
   Alert,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 export default function CreateTreePage() {
   const router = useRouter();
+  const { isLoaded, userId } = useAuth();
   const [formData, setFormData] = useState({
     rootPersonName: '',
     rootPersonBirthDate: '',
@@ -22,6 +24,7 @@ export default function CreateTreePage() {
     rootPersonStory: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({
@@ -30,9 +33,16 @@ export default function CreateTreePage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Check authentication
+    if (!isLoaded || !userId) {
+      setError('You must be signed in to create a tree');
+      router.push('/sign-in');
+      return;
+    }
 
     // Validation
     if (!formData.rootPersonName.trim()) {
@@ -40,25 +50,28 @@ export default function CreateTreePage() {
       return;
     }
 
-    // For now, store in localStorage (temporary until we have auth/database)
-    const treeId = Date.now().toString();
-    const tree = {
-      id: treeId,
-      slug: formData.rootPersonName.toLowerCase().replace(/\s+/g, '-'),
-      ...formData,
-      createdAt: new Date().toISOString(),
-    };
+    setLoading(true);
 
-    // Save to localStorage
-    localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
+    try {
+      const response = await fetch('/api/trees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-    // Also save to a list of all trees
-    const trees = JSON.parse(localStorage.getItem('trees') || '[]');
-    trees.push(tree);
-    localStorage.setItem('trees', JSON.stringify(trees));
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create tree');
+      }
 
-    // Redirect to the tree view
-    router.push(`/trees/${treeId}`);
+      const tree = await response.json();
+      router.push(`/trees/${tree.id}`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create tree');
+      setLoading(false);
+    }
   };
 
   return (
@@ -129,6 +142,7 @@ export default function CreateTreePage() {
                 variant="outlined"
                 size="large"
                 onClick={() => router.push('/')}
+                disabled={loading}
               >
                 Cancel
               </Button>
@@ -137,20 +151,15 @@ export default function CreateTreePage() {
                 variant="contained"
                 size="large"
                 color="primary"
+                disabled={loading}
               >
-                Create Tree
+                {loading ? 'Creating...' : 'Create Tree'}
               </Button>
             </Box>
           </Stack>
         </form>
       </Paper>
 
-      <Box sx={{ mt: 3, p: 2, bgcolor: 'info.light', borderRadius: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          <strong>Note:</strong> This is a development version. Your tree will be stored temporarily in your browser.
-          In the full version, trees will be securely saved and accessible from any device.
-        </Typography>
-      </Box>
     </Container>
   );
 }
