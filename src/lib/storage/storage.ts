@@ -73,7 +73,7 @@ async function uploadToS3(
   const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
 
   const s3Client = new S3Client({
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
@@ -91,8 +91,9 @@ async function uploadToS3(
   const key = `${folder}/${filename}`;
 
   // Upload to S3
+  const bucketName = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET;
   const command = new PutObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET,
+    Bucket: bucketName,
     Key: key,
     Body: buffer,
     ContentType: file.type,
@@ -101,10 +102,11 @@ async function uploadToS3(
   await s3Client.send(command);
 
   // Return CloudFront URL if available, otherwise S3 URL
-  const cloudFrontDomain = process.env.AWS_CLOUDFRONT_DOMAIN;
+  const cloudFrontDomain = process.env.CLOUDFRONT_DOMAIN || process.env.AWS_CLOUDFRONT_DOMAIN;
+  const region = process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1';
   const url = cloudFrontDomain
     ? `https://${cloudFrontDomain}/${key}`
-    : `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    : `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
 
   return {
     url,
@@ -139,7 +141,7 @@ async function deleteFromS3(key: string): Promise<void> {
   const { S3Client, DeleteObjectCommand } = await import('@aws-sdk/client-s3');
 
   const s3Client = new S3Client({
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
@@ -147,7 +149,7 @@ async function deleteFromS3(key: string): Promise<void> {
   });
 
   const command = new DeleteObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET,
+    Bucket: process.env.S3_BUCKET || process.env.AWS_S3_BUCKET,
     Key: key,
   });
 

@@ -17,7 +17,8 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region  = var.aws_region
+  profile = var.aws_profile
 
   default_tags {
     tags = {
@@ -36,6 +37,12 @@ variable "aws_region" {
   description = "AWS region for resources"
   type        = string
   default     = "us-east-1"
+}
+
+variable "aws_profile" {
+  description = "AWS CLI profile to use"
+  type        = string
+  default     = "default"
 }
 
 variable "environment" {
@@ -89,6 +96,7 @@ module "s3" {
 
   environment = var.environment
   domain_name = var.domain_name
+  aws_region  = var.aws_region
 }
 
 # AWS Amplify for Next.js Hosting (with auto-build from GitHub)

@@ -12,12 +12,17 @@ variable "domain_name" {
   type        = string
 }
 
+variable "aws_region" {
+  description = "AWS region for unique bucket naming"
+  type        = string
+}
+
 # S3 Bucket for Media Uploads
 resource "aws_s3_bucket" "media" {
-  bucket = "avamae-media-${var.environment}"
+  bucket = "avamae-media-${var.environment}-${var.aws_region}"
 
   tags = {
-    Name = "avamae-media-${var.environment}"
+    Name = "avamae-media-${var.environment}-${var.aws_region}"
   }
 }
 
@@ -77,6 +82,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
     id     = "transition-old-versions"
     status = "Enabled"
 
+    filter {
+      prefix = ""  # Apply to all objects
+    }
+
     # Transition old versions to cheaper storage after 30 days
     noncurrent_version_transition {
       noncurrent_days = 30
@@ -92,6 +101,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
   rule {
     id     = "abort-incomplete-uploads"
     status = "Enabled"
+
+    filter {
+      prefix = ""  # Apply to all objects
+    }
 
     # Clean up incomplete multipart uploads after 7 days
     abort_incomplete_multipart_upload {

@@ -78,21 +78,12 @@ resource "aws_amplify_app" "main" {
   enable_auto_branch_creation = false
   enable_branch_auto_build    = true
 
-  # Environment variables
+  # Environment variables (AWS_* variables must be added after creation)
   environment_variables = {
-    NODE_ENV              = "production"
-    AWS_REGION            = data.aws_region.current.name
-    AWS_S3_BUCKET         = var.s3_bucket_name
-    AWS_CLOUDFRONT_DOMAIN = var.cloudfront_domain
-    STORAGE_TYPE          = "s3"
-    # Clerk keys must be added manually in Amplify Console after deployment
-    # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_..."
-    # CLERK_SECRET_KEY = "sk_..."
-    # NEXT_PUBLIC_CLERK_SIGN_IN_URL = "/sign-in"
-    # NEXT_PUBLIC_CLERK_SIGN_UP_URL = "/sign-up"
-    # NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL = "/"
-    # NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL = "/"
-    # CLERK_WEBHOOK_SECRET = "whsec_..."
+    NODE_ENV     = "production"
+    STORAGE_TYPE = "s3"
+    # AWS credentials and other vars must be added manually in Amplify Console
+    # Amplify doesn't allow AWS_* prefix during initial creation
   }
 
   custom_rule {

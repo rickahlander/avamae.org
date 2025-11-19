@@ -229,24 +229,27 @@ The application supports both local and S3 storage for media files:
 
 Deploy to AWS with cost-optimized configuration (~$45-70/month for low-traffic production).
 
-### Quick Start
+### Choose Your Deployment Method
 
+**Option 1: Terraform (Recommended - 25 minutes)**
 ```bash
-# 1. Configure terraform/terraform.tfvars
-# 2. Deploy infrastructure
 cd terraform
 terraform init
 terraform apply
-
-# 3. Configure Amplify environment variables (see DEPLOYMENT.md)
-# 4. Push to GitHub - auto-deploys!
-git push origin main
+# Configure Amplify environment variables
+git push origin main  # Auto-deploys!
 ```
 
-**📖 Detailed Guides:**
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide with troubleshooting
-- [terraform/QUICK-START.md](./terraform/QUICK-START.md) - 5-minute quick reference
-- [terraform/README.md](./terraform/README.md) - Infrastructure documentation
+**Option 2: Manual AWS Console (60 minutes)**
+- Follow step-by-step guide
+- Great for learning AWS services
+- No tools required (just web browser)
+
+**📖 Documentation:**
+- [DEPLOYMENT-COMPARISON.md](./DEPLOYMENT-COMPARISON.md) - Compare both methods
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Terraform deployment (detailed)
+- [MANUAL-DEPLOYMENT.md](./MANUAL-DEPLOYMENT.md) - Manual AWS Console setup
+- [terraform/QUICK-START.md](./terraform/QUICK-START.md) - 5-minute Terraform guide
 
 **🏗️ Infrastructure:**
 - AWS Amplify (Next.js SSR with auto-build from GitHub)
