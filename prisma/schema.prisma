@@ -14,29 +14,30 @@ datasource db {
 // ============================================================================
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // hashed
-  name      String
-  avatarUrl String?  @map("avatar_url")
-  bio       String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  clerkId      String?  @unique @map("clerk_id")
+  email        String   @unique
+  name         String
+  avatarUrl    String?  @map("avatar_url")
+  bio          String?
+  isSuperAdmin Boolean  @default(false) @map("is_super_admin")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  ownedTrees       Tree[]              @relation("TreeOwner")
-  treeMemberships  TreeMember[]
-  createdBranches  Branch[]            @relation("BranchCreator")
-  approvedBranches Branch[]            @relation("BranchApprover")
-  stories          Story[]             @relation("StoryAuthor")
-  approvedStories  Story[]             @relation("StoryApprover")
-  invitationsSent  Invitation[]        @relation("InvitationSender")
-  joinRequests     JoinRequest[]
-  connections1     MemberConnection[]  @relation("Connection1")
-  connections2     MemberConnection[]  @relation("Connection2")
-  branchMedia      BranchMedia[]
-  storyMedia       StoryMedia[]
-  joinRequestsReviewed JoinRequest[]   @relation("JoinRequestReviewer")
+  ownedTrees         Tree[]              @relation("TreeOwner")
+  treeMemberships    TreeMember[]
+  createdBranches    Branch[]            @relation("BranchCreator")
+  approvedBranches   Branch[]            @relation("BranchApprover")
+  stories            Story[]             @relation("StoryAuthor")
+  approvedStories    Story[]             @relation("StoryApprover")
+  invitationsSent    Invitation[]        @relation("InvitationSender")
+  connections1       MemberConnection[]  @relation("Connection1")
+  connections2       MemberConnection[]  @relation("Connection2")
+  branchMedia        BranchMedia[]
+  storyMedia         StoryMedia[]
+  branchPermissions  BranchPermission[]
+  grantedPermissions BranchPermission[]  @relation("PermissionGranter")
 
   @@map("users")
 }
@@ -53,7 +54,6 @@ model Tree {
   rootPersonBirthDate DateTime? @map("root_person_birth_date")
   rootPersonDeathDate DateTime? @map("root_person_death_date")
   rootPersonStory    String?  @map("root_person_story") @db.Text
-  visibility         Visibility @default(PUBLIC)
   moderationMode     ModerationMode @default(MODERATED) @map("moderation_mode")
   ownerId            String   @map("owner_id")
   createdAt          DateTime @default(now()) @map("created_at")
@@ -66,20 +66,12 @@ model Tree {
   branches           Branch[]
   branchTypes        BranchType[]
   stories            Story[]
-  joinRequests       JoinRequest[]
   invitations        Invitation[]
   memberConnections  MemberConnection[]
 
   @@index([slug])
   @@index([ownerId])
-  @@index([visibility])
   @@map("trees")
-}
-
-enum Visibility {
-  PUBLIC
-  PRIVATE
-  INVITE_ONLY
 }
 
 enum ModerationMode {
@@ -112,6 +104,7 @@ model TreeMember {
 enum MemberRole {
   OWNER
   ADMIN
+  MODERATOR
   CONTRIBUTOR
   VIEWER
 }
@@ -159,20 +152,50 @@ model Branch {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  tree            Tree         @relation(fields: [treeId], references: [id], onDelete: Cascade)
-  parentBranch    Branch?      @relation("BranchHierarchy", fields: [parentBranchId], references: [id], onDelete: Cascade)
-  childBranches   Branch[]     @relation("BranchHierarchy")
-  branchType      BranchType   @relation(fields: [branchTypeId], references: [id])
-  createdBy       User         @relation("BranchCreator", fields: [createdByUserId], references: [id])
-  approver        User?        @relation("BranchApprover", fields: [approvedBy], references: [id])
+  tree            Tree               @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  parentBranch    Branch?            @relation("BranchHierarchy", fields: [parentBranchId], references: [id], onDelete: Cascade)
+  childBranches   Branch[]           @relation("BranchHierarchy")
+  branchType      BranchType         @relation(fields: [branchTypeId], references: [id])
+  createdBy       User               @relation("BranchCreator", fields: [createdByUserId], references: [id])
+  approver        User?              @relation("BranchApprover", fields: [approvedBy], references: [id])
   media           BranchMedia[]
   stories         Story[]
+  permissions     BranchPermission[]
 
   @@index([treeId])
   @@index([parentBranchId])
   @@index([branchTypeId])
   @@index([approved])
   @@map("branches")
+}
+
+// ============================================================================
+// Branch Permissions (ACL System)
+// ============================================================================
+
+model BranchPermission {
+  id        String     @id @default(uuid())
+  branchId  String     @map("branch_id")
+  userId    String     @map("user_id")
+  role      BranchRole
+  grantedBy String?    @map("granted_by")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  branch  Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  granter User?  @relation("PermissionGranter", fields: [grantedBy], references: [id], onDelete: SetNull)
+
+  @@unique([branchId, userId])
+  @@index([branchId])
+  @@index([userId])
+  @@map("branch_permissions")
+}
+
+enum BranchRole {
+  BRANCH_ADMIN
+  BRANCH_EDITOR
+  BRANCH_VIEWER
 }
 
 // ============================================================================
@@ -276,37 +299,6 @@ model MemberConnection {
 enum ConnectionStatus {
   PENDING
   ACCEPTED
-}
-
-// ============================================================================
-// Join Requests (for public trees)
-// ============================================================================
-
-model JoinRequest {
-  id         String            @id @default(uuid())
-  treeId     String            @map("tree_id")
-  userId     String            @map("user_id")
-  message    String?           @db.Text
-  status     RequestStatus     @default(PENDING)
-  reviewedBy String?           @map("reviewed_by")
-  createdAt  DateTime          @default(now()) @map("created_at")
-  updatedAt  DateTime          @updatedAt @map("updated_at")
-
-  // Relations
-  tree       Tree              @relation(fields: [treeId], references: [id], onDelete: Cascade)
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewer   User?             @relation("JoinRequestReviewer", fields: [reviewedBy], references: [id])
-
-  @@unique([treeId, userId])
-  @@index([treeId])
-  @@index([status])
-  @@map("join_requests")
-}
-
-enum RequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }
 
 // ============================================================================

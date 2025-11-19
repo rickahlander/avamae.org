@@ -9,7 +9,7 @@ db_username = "avamae_admin"
 db_password = "CHANGE_ME_STRONG_PASSWORD" # Use AWS Secrets Manager in production
 
 # GitHub Configuration (for Amplify)
-repository_url = "https://github.com/yourusername/avamae.org"
+repository_url = "https://github.com/rickahlander/avamae.org"
 github_token   = "ghp_YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
 
 # Note: Never commit this file with real values!

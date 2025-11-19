@@ -9,11 +9,19 @@ import { getBranchTypeConfig } from '@/constants/branchTypes';
 interface Branch {
   id: string;
   title: string;
-  type: string;
+  branchType: {
+    id: string;
+    name: string;
+    icon?: string | null;
+    color?: string | null;
+  };
   dateOccurred?: string;
   parentBranchId?: string | null;
   description?: string;
-  photos?: string[];
+  media?: Array<{
+    url: string;
+    caption?: string | null;
+  }>;
 }
 
 interface TreeData {
@@ -29,6 +37,7 @@ interface TreeData {
 
 interface TreeVisualizationProps {
   tree: TreeData;
+  canEdit?: boolean;
 }
 
 interface BranchCardProps {
@@ -37,15 +46,16 @@ interface BranchCardProps {
   level: number;
   allBranches: Branch[];
   onDelete: (branchId: string) => void;
+  canEdit?: boolean;
 }
 
-function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCardProps) {
+function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = false }: BranchCardProps) {
   const router = useRouter();
   const childBranches = allBranches.filter((b) => b.parentBranchId === branch.id);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Get the correct icon for this branch type
-  const branchConfig = getBranchTypeConfig(branch.type);
+  const branchConfig = getBranchTypeConfig(branch.branchType.name);
   const BranchIcon = branchConfig?.icon || HelpOutline;
 
   const handleDeleteClick = () => {
@@ -94,7 +104,7 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCard
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
           <BranchIcon sx={{ color: '#FF7F50', fontSize: '0.9rem' }} />
           <Chip
-            label={branchConfig?.label || branch.type.replace(/_/g, ' ')}
+            label={branchConfig?.label || branch.branchType.name.replace(/_/g, ' ')}
             size="small"
             sx={{
               bgcolor: '#8FBC8F',
@@ -139,9 +149,9 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCard
         )}
 
         {/* Photo thumbnails */}
-        {branch.photos && branch.photos.length > 0 && (
+        {branch.media && branch.media.length > 0 && (
           <Box sx={{ display: 'flex', gap: 0.5, mt: 1, flexWrap: 'wrap' }}>
-            {branch.photos.slice(0, 3).map((photo, index) => (
+            {branch.media.slice(0, 3).map((mediaItem, index) => (
               <Box
                 key={index}
                 sx={{
@@ -155,8 +165,8 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCard
                 }}
               >
                 <img
-                  src={photo}
-                  alt={`${branch.title} photo ${index + 1}`}
+                  src={mediaItem.url}
+                  alt={mediaItem.caption || `${branch.title} photo ${index + 1}`}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -165,7 +175,7 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCard
                 />
               </Box>
             ))}
-            {branch.photos.length > 3 && (
+            {branch.media.length > 3 && (
               <Box
                 sx={{
                   width: 40,
@@ -180,68 +190,70 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCard
                   color: 'text.secondary',
                 }}
               >
-                +{branch.photos.length - 3}
+                +{branch.media.length - 3}
               </Box>
             )}
           </Box>
         )}
 
-        {/* Action Buttons */}
-        <Box sx={{ display: 'flex', gap: 0.5, mt: 1.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Tooltip title="Edit branch">
-            <IconButton
-              size="small"
-              onClick={() => router.push(`/trees/${treeId}/edit-branch/${branch.id}`)}
-              sx={{
-                bgcolor: 'primary.main',
-                color: 'white',
-                width: 20,
-                height: 20,
-                '&:hover': {
-                  bgcolor: 'primary.dark',
-                },
-              }}
-            >
-              <Edit sx={{ fontSize: '0.75rem' }} />
-            </IconButton>
-          </Tooltip>
+        {/* Action Buttons - Only show if user can edit */}
+        {canEdit && (
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 1.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+            <Tooltip title="Edit branch">
+              <IconButton
+                size="small"
+                onClick={() => router.push(`/trees/${treeId}/edit-branch/${branch.id}`)}
+                sx={{
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  width: 20,
+                  height: 20,
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                }}
+              >
+                <Edit sx={{ fontSize: '0.75rem' }} />
+              </IconButton>
+            </Tooltip>
 
-          <Tooltip title="Add sub-branch">
-            <IconButton
-              size="small"
-              onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
-              sx={{
-                bgcolor: 'secondary.main',
-                color: 'white',
-                width: 20,
-                height: 20,
-                '&:hover': {
-                  bgcolor: 'secondary.dark',
-                },
-              }}
-            >
-              <Add sx={{ fontSize: '0.85rem' }} />
-            </IconButton>
-          </Tooltip>
+            <Tooltip title="Add sub-branch">
+              <IconButton
+                size="small"
+                onClick={() => router.push(`/trees/${treeId}/add-branch?parentBranchId=${branch.id}`)}
+                sx={{
+                  bgcolor: 'secondary.main',
+                  color: 'white',
+                  width: 20,
+                  height: 20,
+                  '&:hover': {
+                    bgcolor: 'secondary.dark',
+                  },
+                }}
+              >
+                <Add sx={{ fontSize: '0.85rem' }} />
+              </IconButton>
+            </Tooltip>
 
-          <Tooltip title="Delete branch">
-            <IconButton
-              size="small"
-              onClick={handleDeleteClick}
-              sx={{
-                bgcolor: 'error.main',
-                color: 'white',
-                width: 20,
-                height: 20,
-                '&:hover': {
-                  bgcolor: 'error.dark',
-                },
-              }}
-            >
-              <Delete sx={{ fontSize: '0.75rem' }} />
-            </IconButton>
-          </Tooltip>
-        </Box>
+            <Tooltip title="Delete branch">
+              <IconButton
+                size="small"
+                onClick={handleDeleteClick}
+                sx={{
+                  bgcolor: 'error.main',
+                  color: 'white',
+                  width: 20,
+                  height: 20,
+                  '&:hover': {
+                    bgcolor: 'error.dark',
+                  },
+                }}
+              >
+                <Delete sx={{ fontSize: '0.75rem' }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
       </Paper>
 
       {/* Child branches - Recursive, stacked vertically */}
@@ -261,6 +273,7 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCard
               level={level + 1}
               allBranches={allBranches}
               onDelete={onDelete}
+              canEdit={canEdit}
             />
           ))}
         </Box>
@@ -300,7 +313,7 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete }: BranchCard
   );
 }
 
-export default function TreeVisualization({ tree }: TreeVisualizationProps) {
+export default function TreeVisualization({ tree, canEdit = false }: TreeVisualizationProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const rootCardRef = useRef<HTMLDivElement>(null);
@@ -410,44 +423,22 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
   };
 
   // Handle branch deletion with recursive child deletion
-  const handleDeleteBranch = (branchId: string) => {
-    // Recursive function to get all branch IDs to delete (including children)
-    const getBranchIdsToDelete = (id: string): string[] => {
-      const childBranches = branches.filter((b) => b.parentBranchId === id);
-      const childIds = childBranches.flatMap((child) => getBranchIdsToDelete(child.id));
-      return [id, ...childIds];
-    };
-
-    const idsToDelete = getBranchIdsToDelete(branchId);
-
-    // Load tree from localStorage
-    const treeData = localStorage.getItem(`tree-${tree.id}`);
-    if (!treeData) return;
-
-    const treeObj = JSON.parse(treeData);
-
-    // Filter out deleted branches
-    treeObj.branches = treeObj.branches.filter((b: Branch) => !idsToDelete.includes(b.id));
-
-    // Save updated tree
+  const handleDeleteBranch = async (branchId: string) => {
     try {
-      localStorage.setItem(`tree-${tree.id}`, JSON.stringify(treeObj));
+      const response = await fetch(`/api/branches/${branchId}`, {
+        method: 'DELETE',
+      });
 
-      // Also update in trees list
-      const trees = JSON.parse(localStorage.getItem('trees') || '[]');
-      const treeIndex = trees.findIndex((t: any) => t.id === tree.id);
-      if (treeIndex !== -1) {
-        trees[treeIndex] = treeObj;
-        localStorage.setItem('trees', JSON.stringify(trees));
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete branch');
       }
 
       // Refresh the page to show updated tree
-      router.refresh();
-      // Force a hard reload to ensure the tree is updated
       window.location.reload();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting branch:', err);
-      alert('Failed to delete branch. Please try again.');
+      alert(err.message || 'Failed to delete branch. Please try again.');
     }
   };
 
@@ -521,26 +512,28 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
               alignItems: 'center',
             }}
           >
-            <Tooltip title="Edit tree">
-              <IconButton
-                size="small"
-                onClick={() => router.push(`/trees/${tree.id}/edit-tree`)}
-                sx={{
-                  position: 'absolute',
-                  top: 16,
-                  right: 16,
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  width: 32,
-                  height: 32,
-                  '&:hover': {
-                    bgcolor: 'rgba(255,255,255,0.3)',
-                  },
-                }}
-              >
-                <Settings sx={{ fontSize: '1.2rem' }} />
-              </IconButton>
-            </Tooltip>
+            {canEdit && (
+              <Tooltip title="Edit tree">
+                <IconButton
+                  size="small"
+                  onClick={() => router.push(`/trees/${tree.id}/edit-tree`)}
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    width: 32,
+                    height: 32,
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.3)',
+                    },
+                  }}
+                >
+                  <Settings sx={{ fontSize: '1.2rem' }} />
+                </IconButton>
+              </Tooltip>
+            )}
 
             {/* Left section - Photo */}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
@@ -660,16 +653,6 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
               </Box>
             </Box>
           </Paper>
-
-          {/* Trunk visual (vertical connector) */}
-          <Box
-            sx={{
-              width: '4px',
-              height: '60px',
-              background: 'linear-gradient(to bottom, #8B7355, #6F5A40)',
-              borderRadius: '2px',
-            }}
-          />
         </Box>
 
         {/* Root-level Branches - Horizontal layout */}
@@ -692,6 +675,7 @@ export default function TreeVisualization({ tree }: TreeVisualizationProps) {
                 level={0}
                 allBranches={branches}
                 onDelete={handleDeleteBranch}
+                canEdit={canEdit}
               />
             ))}
           </Box>

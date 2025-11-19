@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import {
   Container,
   Typography,
@@ -21,28 +22,54 @@ interface TreeData {
   rootPersonBirthDate?: string;
   rootPersonDeathDate?: string;
   rootPersonStory?: string;
+  rootPersonPhotoUrl?: string;
+  rootPersonPhotos?: string[];
   branches?: any[];
+  members?: any[];
+  owner: {
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
+  };
   createdAt: string;
 }
 
 export default function TreeViewPage() {
   const params = useParams();
   const router = useRouter();
+  const { isSignedIn } = useAuth();
   const [tree, setTree] = useState<TreeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Load tree from localStorage
-    const treeId = params.id as string;
-    const treeData = localStorage.getItem(`tree-${treeId}`);
+    // Fetch tree from API
+    const fetchTree = async () => {
+      try {
+        const treeId = params.id as string;
+        const response = await fetch(`/api/trees/${treeId}`);
 
-    if (treeData) {
-      setTree(JSON.parse(treeData));
-    } else {
-      setError('Tree not found');
-    }
-    setLoading(false);
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Tree not found');
+          } else if (response.status === 403) {
+            throw new Error('You do not have permission to view this tree');
+          } else {
+            throw new Error('Failed to load tree');
+          }
+        }
+
+        const data = await response.json();
+        setTree(data);
+      } catch (err: any) {
+        console.error('Error fetching tree:', err);
+        setError(err.message || 'Failed to load tree');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTree();
   }, [params.id]);
 
   if (loading) {
@@ -82,14 +109,16 @@ export default function TreeViewPage() {
           Back
         </Button>
 
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => router.push(`/trees/${tree.id}/add-branch`)}
-          color="secondary"
-        >
-          Add Branch
-        </Button>
+        {isSignedIn && (
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => router.push(`/trees/${tree.id}/add-branch`)}
+            color="secondary"
+          >
+            Add Branch
+          </Button>
+        )}
       </Box>
 
       {/* Tree Title */}
@@ -112,16 +141,9 @@ export default function TreeViewPage() {
           mb: 4,
         }}
       >
-        <TreeVisualization tree={tree} />
+        <TreeVisualization tree={tree} canEdit={isSignedIn || false} />
       </Paper>
 
-      {/* Info Box */}
-      <Box sx={{ mt: 3, p: 2, bgcolor: 'info.light', borderRadius: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          <strong>Coming soon:</strong> Share this tree, invite others to contribute,
-          add stories and memories, and watch the legacy grow.
-        </Typography>
-      </Box>
     </Container>
   );
 }
