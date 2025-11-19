@@ -122,20 +122,37 @@ export default function EditBranchPage() {
     if (!files) return;
 
     setError(''); // Clear any previous errors
+    setLoading(true);
 
-    for (const file of Array.from(files)) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit before compression
-        setError('Photo size must be less than 10MB');
-        continue;
-      }
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          setError('Photo size must be less than 10MB');
+          continue;
+        }
 
-      try {
-        const compressedPhoto = await compressImage(file);
-        setPhotos(prev => [...prev, compressedPhoto]);
-      } catch (err) {
-        console.error('Error compressing image:', err);
-        setError('Failed to process image. Please try a different photo.');
+        // Upload to server (S3 in production, local in dev)
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'branches');
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload photo');
+        }
+
+        const data = await response.json();
+        setPhotos(prev => [...prev, data.url]);
       }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      setError('Failed to upload image. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

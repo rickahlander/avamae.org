@@ -72,13 +72,21 @@ async function uploadToS3(
   // Import S3 client only when needed
   const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
 
-  const s3Client = new S3Client({
+  // Configure S3 client - use IAM role credentials in ECS, explicit credentials elsewhere
+  const s3Config: any = {
     region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
-  });
+  };
+
+  // Only add explicit credentials if they're provided (for local dev)
+  // In ECS, the SDK will automatically use the IAM task role
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    s3Config.credentials = {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    };
+  }
+
+  const s3Client = new S3Client(s3Config);
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
@@ -140,13 +148,21 @@ async function deleteFromLocal(key: string): Promise<void> {
 async function deleteFromS3(key: string): Promise<void> {
   const { S3Client, DeleteObjectCommand } = await import('@aws-sdk/client-s3');
 
-  const s3Client = new S3Client({
+  // Configure S3 client - use IAM role credentials in ECS, explicit credentials elsewhere
+  const s3Config: any = {
     region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    },
-  });
+  };
+
+  // Only add explicit credentials if they're provided (for local dev)
+  // In ECS, the SDK will automatically use the IAM task role
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
+    s3Config.credentials = {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    };
+  }
+
+  const s3Client = new S3Client(s3Config);
 
   const command = new DeleteObjectCommand({
     Bucket: process.env.S3_BUCKET || process.env.AWS_S3_BUCKET,
