@@ -106,8 +106,9 @@ export default function BranchViewPage() {
   }
 
   const branchTypeConfig = getBranchTypeConfig(branch.branchType.name);
-  const icon = branch.branchType.icon || branchTypeConfig.icon;
-  const color = branch.branchType.color || branchTypeConfig.color;
+  const iconString = branch.branchType.icon; // String emoji from DB
+  const IconComponent = branchTypeConfig?.icon; // React component from config
+  const color = branch.branchType.color || branchTypeConfig?.color || '#8FBC8F';
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -140,8 +141,14 @@ export default function BranchViewPage() {
             {/* Branch Type */}
             <Box sx={{ mb: 3 }}>
               <Chip
-                label={branchTypeConfig.label}
-                icon={<span style={{ fontSize: '1.2rem' }}>{icon}</span>}
+                label={branchTypeConfig?.label || 'Impact'}
+                icon={
+                  iconString ? (
+                    <span style={{ fontSize: '1.2rem' }}>{iconString}</span>
+                  ) : IconComponent ? (
+                    <IconComponent sx={{ fontSize: '1.2rem' }} />
+                  ) : undefined
+                }
                 sx={{
                   bgcolor: color + '20',
                   color: color,
