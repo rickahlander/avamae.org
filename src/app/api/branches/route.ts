@@ -51,6 +51,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tree not found' }, { status: 404 });
     }
 
+    // Look up branch type by name or ID
+    let branchType;
+    if (branchTypeId.includes('-')) {
+      // It's a UUID
+      branchType = await prisma.branchType.findUnique({
+        where: { id: branchTypeId },
+      });
+    } else {
+      // It's a name
+      branchType = await prisma.branchType.findFirst({
+        where: { name: branchTypeId },
+      });
+    }
+
+    if (!branchType) {
+      return NextResponse.json(
+        { error: 'Branch type not found' },
+        { status: 400 }
+      );
+    }
+
     // Determine if branch needs approval
     const needsApproval =
       tree.moderationMode === 'MODERATED' && tree.ownerId !== userId;
@@ -60,7 +81,7 @@ export async function POST(request: Request) {
       data: {
         treeId,
         parentBranchId: parentBranchId || null,
-        branchTypeId,
+        branchTypeId: branchType.id,
         title,
         description,
         dateOccurred: dateOccurred ? new Date(dateOccurred) : null,

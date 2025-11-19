@@ -88,6 +88,23 @@ export async function PUT(
     const body = await request.json();
     const { title, description, dateOccurred, metadata, photos, branchTypeId } = body;
 
+    // Look up branch type by name or ID if provided
+    let resolvedBranchTypeId = branchTypeId;
+    if (branchTypeId) {
+      if (branchTypeId.includes('-')) {
+        // It's already a UUID
+        resolvedBranchTypeId = branchTypeId;
+      } else {
+        // It's a name, look it up
+        const branchType = await prisma.branchType.findFirst({
+          where: { name: branchTypeId },
+        });
+        if (branchType) {
+          resolvedBranchTypeId = branchType.id;
+        }
+      }
+    }
+
     // Update branch
     const updatedBranch = await prisma.branch.update({
       where: { id },
@@ -96,7 +113,7 @@ export async function PUT(
         description,
         dateOccurred: dateOccurred ? new Date(dateOccurred) : null,
         metadata,
-        ...(branchTypeId && { branchTypeId }),
+        ...(resolvedBranchTypeId && { branchTypeId: resolvedBranchTypeId }),
       },
       include: {
         branchType: true,
