@@ -32,20 +32,30 @@ export default function EditTreePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load tree data
-    const treeData = localStorage.getItem(`tree-${treeId}`);
-    if (treeData) {
-      const tree = JSON.parse(treeData);
-      setFormData({
-        rootPersonName: tree.rootPersonName || '',
-        rootPersonBirthDate: tree.rootPersonBirthDate || '',
-        rootPersonDeathDate: tree.rootPersonDeathDate || '',
-        rootPersonStory: tree.rootPersonStory || '',
-      });
-      setProfilePhoto(tree.rootPersonProfilePhoto || '');
-      setPhotos(tree.rootPersonPhotos || []);
-    }
-    setLoading(false);
+    // Load tree data from API
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`/api/trees/${treeId}`);
+        if (!response.ok) throw new Error('Failed to load tree');
+        const tree = await response.json();
+        
+        setFormData({
+          rootPersonName: tree.rootPersonName || '',
+          rootPersonBirthDate: tree.rootPersonBirthDate ? tree.rootPersonBirthDate.split('T')[0] : '',
+          rootPersonDeathDate: tree.rootPersonDeathDate ? tree.rootPersonDeathDate.split('T')[0] : '',
+          rootPersonStory: tree.rootPersonStory || '',
+        });
+        setProfilePhoto(tree.rootPersonProfilePhoto || '');
+        setPhotos(tree.rootPersonPhotos || []);
+      } catch (err) {
+        console.error('Error loading tree:', err);
+        setError('Failed to load tree data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [treeId]);
 
   const handleChange = (field: string) => (e: any) => {
@@ -139,7 +149,7 @@ export default function EditTreePage() {
     setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -149,49 +159,30 @@ export default function EditTreePage() {
       return;
     }
 
-    // Load existing tree
-    const treeData = localStorage.getItem(`tree-${treeId}`);
-
-    if (!treeData) {
-      setError('Tree not found');
-      return;
-    }
-
-    const tree = JSON.parse(treeData);
-
-    // Update tree with new data
-    tree.rootPersonName = formData.rootPersonName;
-    tree.rootPersonBirthDate = formData.rootPersonBirthDate;
-    tree.rootPersonDeathDate = formData.rootPersonDeathDate;
-    tree.rootPersonStory = formData.rootPersonStory;
-    tree.rootPersonProfilePhoto = profilePhoto;
-    tree.rootPersonPhotos = photos;
-    tree.updatedAt = new Date().toISOString();
-
-    // Save updated tree
     try {
-      localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
+      // Update tree via API
+      const response = await fetch(`/api/trees/${treeId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          rootPersonProfilePhoto: profilePhoto,
+          rootPersonPhotos: photos,
+        }),
+      });
 
-      // Also update in trees list
-      const trees = JSON.parse(localStorage.getItem('trees') || '[]');
-      const treeIndex = trees.findIndex((t: any) => t.id === treeId);
-      if (treeIndex !== -1) {
-        trees[treeIndex] = tree;
-        localStorage.setItem('trees', JSON.stringify(trees));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update tree');
       }
 
       // Redirect back to tree view
       router.push(`/trees/${treeId}`);
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'QuotaExceededError') {
-        setError(
-          'Storage limit exceeded. Please remove some photos or try uploading smaller images. ' +
-          'LocalStorage has a ~5-10MB limit. Consider removing photos from other trees or branches.'
-        );
-      } else {
-        setError('Failed to save tree. Please try again.');
-      }
       console.error('Error saving tree:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save tree. Please try again.');
     }
   };
 

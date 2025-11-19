@@ -39,27 +39,36 @@ export default function EditBranchPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load tree and branch data
-    const treeData = localStorage.getItem(`tree-${treeId}`);
-    if (treeData) {
-      const tree = JSON.parse(treeData);
-      setTreeName(tree.rootPersonName);
+    // Load tree and branch data from API
+    const fetchData = async () => {
+      try {
+        // Fetch tree data
+        const treeRes = await fetch(`/api/trees/${treeId}`);
+        if (!treeRes.ok) throw new Error('Failed to load tree');
+        const tree = await treeRes.json();
+        setTreeName(tree.rootPersonName);
 
-      // Find the branch to edit
-      if (tree.branches) {
-        const branch = tree.branches.find((b: any) => b.id === branchId);
-        if (branch) {
-          setFormData({
-            title: branch.title || '',
-            type: branch.type || '',
-            description: branch.description || '',
-            dateOccurred: branch.dateOccurred || '',
-          });
-          setPhotos(branch.photos || []);
-        }
+        // Fetch branch data
+        const branchRes = await fetch(`/api/branches/${branchId}`);
+        if (!branchRes.ok) throw new Error('Failed to load branch');
+        const branch = await branchRes.json();
+        
+        setFormData({
+          title: branch.title || '',
+          type: branch.type || '',
+          description: branch.description || '',
+          dateOccurred: branch.dateOccurred ? branch.dateOccurred.split('T')[0] : '',
+        });
+        setPhotos(branch.photos || []);
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setError('Failed to load branch data');
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
+    };
+
+    fetchData();
   }, [treeId, branchId]);
 
   const handleChange = (field: string) => (e: any) => {
@@ -133,7 +142,7 @@ export default function EditBranchPage() {
     setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -147,57 +156,29 @@ export default function EditBranchPage() {
       return;
     }
 
-    // Load existing tree
-    const treeData = localStorage.getItem(`tree-${treeId}`);
-
-    if (!treeData) {
-      setError('Tree not found');
-      return;
-    }
-
-    const tree = JSON.parse(treeData);
-
-    // Find and update the branch
-    if (tree.branches) {
-      const branchIndex = tree.branches.findIndex((b: any) => b.id === branchId);
-      if (branchIndex !== -1) {
-        tree.branches[branchIndex] = {
-          ...tree.branches[branchIndex],
+    try {
+      // Update branch via API
+      const response = await fetch(`/api/branches/${branchId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           ...formData,
           photos: photos,
-          updatedAt: new Date().toISOString(),
-        };
+        }),
+      });
 
-        // Save updated tree
-        try {
-          localStorage.setItem(`tree-${treeId}`, JSON.stringify(tree));
-
-          // Also update in trees list
-          const trees = JSON.parse(localStorage.getItem('trees') || '[]');
-          const treeIndex = trees.findIndex((t: any) => t.id === treeId);
-          if (treeIndex !== -1) {
-            trees[treeIndex] = tree;
-            localStorage.setItem('trees', JSON.stringify(trees));
-          }
-
-          // Redirect back to tree view
-          router.push(`/trees/${treeId}`);
-        } catch (err) {
-          if (err instanceof DOMException && err.name === 'QuotaExceededError') {
-            setError(
-              'Storage limit exceeded. Please remove some photos or try uploading smaller images. ' +
-              'LocalStorage has a ~5-10MB limit. Consider removing photos from other trees or branches.'
-            );
-          } else {
-            setError('Failed to save branch. Please try again.');
-          }
-          console.error('Error saving branch:', err);
-        }
-      } else {
-        setError('Branch not found');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update branch');
       }
-    } else {
-      setError('No branches found');
+
+      // Redirect back to tree view
+      router.push(`/trees/${treeId}`);
+    } catch (err) {
+      console.error('Error saving branch:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save branch. Please try again.');
     }
   };
 
