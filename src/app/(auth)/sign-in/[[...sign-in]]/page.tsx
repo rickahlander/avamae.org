@@ -18,7 +18,7 @@ export default function SignInPage() {
           Welcome to Avamae
         </Typography>
         <Typography variant="body1" color="text.secondary" textAlign="center" sx={{ mb: 4 }}>
-          Sign in to create and manage memorial trees
+          Sign in to create and manage legacy trees
         </Typography>
         <SignIn />
       </Box>

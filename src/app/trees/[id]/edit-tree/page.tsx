@@ -255,7 +255,7 @@ export default function EditTreePage() {
           </Typography>
         </Box>
         <Typography variant="body1" color="text.secondary">
-          Update the memorial tree details
+          Update the legacy tree details
         </Typography>
       </Box>
 
@@ -274,7 +274,7 @@ export default function EditTreePage() {
               fullWidth
               value={formData.rootPersonName}
               onChange={handleChange('rootPersonName')}
-              helperText="The name of the person this memorial tree honors"
+              helperText="The name of the person this legacy tree honors"
               variant="outlined"
             />
 

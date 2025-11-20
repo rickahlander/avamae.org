@@ -124,7 +124,7 @@ export default function TreeViewPage() {
       {/* Tree Title */}
       <Box sx={{ mb: 3, textAlign: 'center' }}>
         <Typography variant="h3" component="h1" color="primary" gutterBottom>
-          {tree.rootPersonName}'s Memorial Tree
+          {tree.rootPersonName}'s Legacy Tree
         </Typography>
         <Typography variant="body1" color="text.secondary">
           A living legacy of impact and blessing

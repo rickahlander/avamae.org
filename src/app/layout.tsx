@@ -22,7 +22,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Ava Mae - Honoring Lives, Growing Legacies",
-  description: "A memorial tree platform that celebrates how lives continue to bless others through organ donation, healed relationships, and lasting impact.",
+  description: "A legacy tree platform that celebrates how lives continue to bless others through organ donation, healed relationships, and lasting impact.",
   keywords: ["memorial", "legacy", "organ donation", "tribute", "family tree"],
 };
 
