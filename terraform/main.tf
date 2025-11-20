@@ -120,6 +120,7 @@ module "ecs" {
   clerk_publishable_key  = var.clerk_publishable_key
   clerk_secret_key       = var.clerk_secret_key
   clerk_webhook_secret   = var.clerk_webhook_secret
+  resend_api_key         = var.resend_api_key
   vpc_id                 = module.rds.vpc_id
   subnet_ids             = module.rds.subnet_ids
   rds_security_group_id  = module.rds.security_group_id
@@ -175,6 +176,12 @@ variable "clerk_secret_key" {
 
 variable "clerk_webhook_secret" {
   description = "Clerk webhook secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "resend_api_key" {
+  description = "Resend API key for sending emails"
   type        = string
   sensitive   = true
 }

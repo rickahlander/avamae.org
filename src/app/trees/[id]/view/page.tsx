@@ -15,9 +15,13 @@ import {
   ImageListItem,
   Skeleton,
   Avatar,
+  Divider,
 } from '@mui/material';
-import { ArrowBack, Edit, CalendarToday, Link as LinkIcon, AccountCircle } from '@mui/icons-material';
+import { ArrowBack, Edit, CalendarToday, Link as LinkIcon, AccountCircle, CreateOutlined } from '@mui/icons-material';
 import { detectPlatformFromUrl, getDisplayLabelFromUrl } from '@/utils/socialIcons';
+import StorySubmissionForm from '@/components/stories/StorySubmissionForm';
+import StoryList from '@/components/stories/StoryList';
+import PendingStoriesPanel from '@/components/stories/PendingStoriesPanel';
 
 interface Tree {
   id: string;
@@ -49,6 +53,9 @@ export default function TreeViewPage() {
   const [tree, setTree] = useState<Tree | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [stories, setStories] = useState<any[]>([]);
+  const [showStoryForm, setShowStoryForm] = useState(false);
+  const [canViewPending, setCanViewPending] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,6 +67,19 @@ export default function TreeViewPage() {
         if (!response.ok) throw new Error('Failed to load tree');
         const treeData = await response.json();
         setTree(treeData);
+
+        // Fetch stories
+        const storiesResponse = await fetch(`/api/stories?treeId=${treeId}&includePending=true`);
+        if (storiesResponse.ok) {
+          const storiesData = await storiesResponse.json();
+          setStories(storiesData);
+          
+          // Check if user can view pending stories (if there are any pending)
+          const hasPending = storiesData.some((s: any) => !s.approved);
+          if (hasPending && isSignedIn) {
+            setCanViewPending(true);
+          }
+        }
       } catch (err) {
         console.error('Error loading data:', err);
         setError('Failed to load tree details');
@@ -69,7 +89,7 @@ export default function TreeViewPage() {
     };
 
     fetchData();
-  }, [params.id]);
+  }, [params.id, isSignedIn]);
 
   if (loading) {
     return (
@@ -113,13 +133,23 @@ export default function TreeViewPage() {
           </Typography>
         </Box>
         {isSignedIn && (
-          <Button
-            variant="outlined"
-            startIcon={<Edit />}
-            onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
-          >
-            Edit
-          </Button>
+          <>
+            <Button
+              variant="contained"
+              startIcon={<CreateOutlined />}
+              onClick={() => setShowStoryForm(true)}
+              sx={{ mr: 1 }}
+            >
+              Share a Story
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Edit />}
+              onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
+            >
+              Edit
+            </Button>
+          </>
         )}
       </Box>
 
@@ -267,6 +297,56 @@ export default function TreeViewPage() {
               </Box>
             )}
           </Paper>
+
+          {/* Pending Stories Panel (for moderators) */}
+          {canViewPending && stories.some((s) => !s.approved) && (
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <PendingStoriesPanel
+                stories={stories}
+                onApprove={async (storyId) => {
+                  await fetch(`/api/stories/${storyId}/approve`, { method: 'POST' });
+                  // Refresh stories
+                  const storiesResponse = await fetch(`/api/stories?treeId=${params.id}&includePending=true`);
+                  if (storiesResponse.ok) {
+                    setStories(await storiesResponse.json());
+                  }
+                }}
+                onReject={async (storyId, reason) => {
+                  await fetch(`/api/stories/${storyId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason }),
+                  });
+                  // Refresh stories
+                  const storiesResponse = await fetch(`/api/stories?treeId=${params.id}&includePending=true`);
+                  if (storiesResponse.ok) {
+                    setStories(await storiesResponse.json());
+                  }
+                }}
+              />
+            </Paper>
+          )}
+
+          {/* Stories Section */}
+          <Paper sx={{ p: 3, mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+              <Typography variant="h5" fontWeight={600}>
+                Stories & Memories
+              </Typography>
+              {isSignedIn && (
+                <Button
+                  variant="outlined"
+                  startIcon={<CreateOutlined />}
+                  onClick={() => setShowStoryForm(true)}
+                  size="small"
+                >
+                  Share a Story
+                </Button>
+              )}
+            </Box>
+            <Divider sx={{ mb: 3 }} />
+            <StoryList stories={stories.filter((s) => s.approved)} />
+          </Paper>
         </Grid>
 
         {/* Sidebar */}
@@ -322,6 +402,21 @@ export default function TreeViewPage() {
           </Button>
         </Grid>
       </Grid>
+
+      {/* Story Submission Form */}
+      <StorySubmissionForm
+        open={showStoryForm}
+        onClose={() => setShowStoryForm(false)}
+        treeId={params.id as string}
+        treeName={tree.rootPersonName}
+        onSuccess={async () => {
+          // Refresh stories
+          const storiesResponse = await fetch(`/api/stories?treeId=${params.id}&includePending=true`);
+          if (storiesResponse.ok) {
+            setStories(await storiesResponse.json());
+          }
+        }}
+      />
     </Container>
   );
 }

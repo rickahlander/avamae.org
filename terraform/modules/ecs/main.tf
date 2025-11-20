@@ -50,6 +50,12 @@ variable "clerk_webhook_secret" {
   sensitive   = true
 }
 
+variable "resend_api_key" {
+  description = "Resend API key for sending emails"
+  type        = string
+  sensitive   = true
+}
+
 variable "app_url" {
   description = "Application URL"
   type        = string
@@ -368,6 +374,7 @@ resource "aws_ecs_task_definition" "app" {
         { name = "NEXT_PUBLIC_CLERK_SIGN_UP_URL", value = "/sign-up" },
         { name = "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL", value = "/" },
         { name = "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL", value = "/" },
+        { name = "RESEND_API_KEY", value = var.resend_api_key },
         { name = "PORT", value = "3000" },
         { name = "HOSTNAME", value = "0.0.0.0" }
       ]

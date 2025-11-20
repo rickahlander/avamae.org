@@ -1,11 +1,13 @@
 'use client';
 
 import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { AccountCircle, Add, Edit, Settings, Delete, HelpOutline } from '@mui/icons-material';
+import { AccountCircle, Add, Edit, Settings, Delete, HelpOutline, CreateOutlined } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getBranchTypeConfig } from '@/constants/branchTypes';
 import { detectPlatformFromUrl, getDisplayLabelFromUrl } from '@/utils/socialIcons';
+import { useUser } from '@clerk/nextjs';
+import StorySubmissionForm from '@/components/stories/StorySubmissionForm';
 
 interface Branch {
   id: string;
@@ -360,10 +362,12 @@ function BranchCard({ branch, treeId, level, allBranches, onDelete, canEdit = fa
 
 export default function TreeVisualization({ tree, canEdit = false }: TreeVisualizationProps) {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const containerRef = useRef<HTMLDivElement>(null);
   const rootCardRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [, setUpdateTrigger] = useState(0);
+  const [showStoryForm, setShowStoryForm] = useState(false);
   const branches = tree.branches || [];
 
   // Get only root-level branches (no parent or parent is null)
@@ -564,31 +568,52 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
               },
             }}
           >
-            {canEdit && (
-              <Tooltip title="Edit tree">
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/trees/${tree.id}/edit-tree`);
-                  }}
-                  sx={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    width: 32,
-                    height: 32,
-                    '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.3)',
-                    },
-                  }}
-                >
-                  <Settings sx={{ fontSize: '1.2rem' }} />
-                </IconButton>
-              </Tooltip>
-            )}
+            <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
+              {isSignedIn && (
+                <Tooltip title="Share a story">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowStoryForm(true);
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      width: 32,
+                      height: 32,
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  >
+                    <CreateOutlined sx={{ fontSize: '1.2rem' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {canEdit && (
+                <Tooltip title="Edit tree">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/trees/${tree.id}/edit-tree`);
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      width: 32,
+                      height: 32,
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  >
+                    <Settings sx={{ fontSize: '1.2rem' }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
 
             {/* Left section - Photo */}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
@@ -808,6 +833,18 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
           </Box>
         )}
       </Box>
+
+      {/* Story Submission Form */}
+      <StorySubmissionForm
+        open={showStoryForm}
+        onClose={() => setShowStoryForm(false)}
+        treeId={tree.id}
+        treeName={tree.rootPersonName}
+        onSuccess={() => {
+          // Optionally reload the page to show pending stories for moderators
+          router.refresh();
+        }}
+      />
     </Box>
   );
 }

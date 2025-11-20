@@ -327,3 +327,107 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
   return user?.isSuperAdmin || false;
 }
 
+// Story-level permission checks
+export async function canSubmitStory(userId: string, treeId: string): Promise<boolean> {
+  // Check if user is superadmin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) return true;
+
+  // Any authenticated user can submit a story to any tree
+  // Stories require approval before being visible
+  return true;
+}
+
+export async function canApproveStory(userId: string, storyId: string): Promise<boolean> {
+  // Check if user is superadmin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) return true;
+
+  // Get story to check tree
+  const story = await prisma.story.findUnique({
+    where: { id: storyId },
+    select: { treeId: true },
+  });
+
+  if (!story) return false;
+
+  // Can moderate tree = can approve stories
+  return canModerateTree(userId, story.treeId);
+}
+
+export async function canEditStory(userId: string, storyId: string): Promise<boolean> {
+  // Check if user is superadmin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) return true;
+
+  // Get story details
+  const story = await prisma.story.findUnique({
+    where: { id: storyId },
+    select: {
+      authorId: true,
+      treeId: true,
+      approved: true,
+    },
+  });
+
+  if (!story) return false;
+
+  // Author can edit their own story (only if not yet approved)
+  if (story.authorId === userId && !story.approved) return true;
+
+  // Moderators can edit any story
+  return canModerateTree(userId, story.treeId);
+}
+
+export async function canDeleteStory(userId: string, storyId: string): Promise<boolean> {
+  // Check if user is superadmin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) return true;
+
+  // Get story details
+  const story = await prisma.story.findUnique({
+    where: { id: storyId },
+    select: {
+      authorId: true,
+      treeId: true,
+    },
+  });
+
+  if (!story) return false;
+
+  // Author can delete their own story
+  if (story.authorId === userId) return true;
+
+  // Moderators can delete any story
+  return canModerateTree(userId, story.treeId);
+}
+
+export async function canViewPendingStories(userId: string, treeId: string): Promise<boolean> {
+  // Check if user is superadmin
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isSuperAdmin: true },
+  });
+
+  if (user?.isSuperAdmin) return true;
+
+  // Can moderate tree = can view pending stories
+  return canModerateTree(userId, treeId);
+}
+
