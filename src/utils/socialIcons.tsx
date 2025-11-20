@@ -93,7 +93,7 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = [
 /**
  * Detect the social platform from a URL
  */
-export function detectPlatformFromUrl(url: string): SocialPlatform | null {
+export function detectPlatformFromUrl(url: string): SocialPlatform {
   const lowerUrl = url.toLowerCase();
   
   // Check for email
