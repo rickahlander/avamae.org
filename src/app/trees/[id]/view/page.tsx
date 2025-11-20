@@ -17,6 +17,7 @@ import {
   Avatar,
 } from '@mui/material';
 import { ArrowBack, Edit, CalendarToday, Link as LinkIcon, AccountCircle } from '@mui/icons-material';
+import { detectPlatformFromUrl, getDisplayLabelFromUrl } from '@/utils/socialIcons';
 
 interface Tree {
   id: string;
@@ -27,6 +28,11 @@ interface Tree {
   url?: string;
   rootPersonProfilePhoto?: string;
   rootPersonPhotos?: string[];
+  links?: Array<{
+    id: string;
+    label?: string | null;
+    url: string;
+  }>;
   owner: {
     id: string;
     name: string | null;
@@ -195,6 +201,43 @@ export default function TreeViewPage() {
                 >
                   View Obituary / Memorial
                 </Button>
+              </Box>
+            )}
+
+            {/* Social Media & Web Links */}
+            {tree.links && tree.links.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom fontWeight={600}>
+                  Links
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {tree.links.map((link) => {
+                    const platform = detectPlatformFromUrl(link.url);
+                    const PlatformIcon = platform.icon;
+                    const displayLabel = link.label || getDisplayLabelFromUrl(link.url);
+
+                    return (
+                      <Button
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        startIcon={<PlatformIcon sx={{ color: platform.color }} />}
+                        variant="outlined"
+                        sx={{
+                          textTransform: 'none',
+                          borderColor: platform.color + '40',
+                          '&:hover': {
+                            borderColor: platform.color,
+                            bgcolor: platform.color + '10',
+                          },
+                        }}
+                      >
+                        {displayLabel}
+                      </Button>
+                    );
+                  })}
+                </Box>
               </Box>
             )}
 

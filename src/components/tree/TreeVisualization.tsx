@@ -5,6 +5,7 @@ import { AccountCircle, Add, Edit, Settings, Delete, HelpOutline } from '@mui/ic
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getBranchTypeConfig } from '@/constants/branchTypes';
+import { detectPlatformFromUrl, getDisplayLabelFromUrl } from '@/utils/socialIcons';
 
 interface Branch {
   id: string;
@@ -34,6 +35,11 @@ interface TreeData {
   url?: string;
   rootPersonProfilePhoto?: string;
   rootPersonPhotos?: string[];
+  links?: Array<{
+    id: string;
+    label?: string | null;
+    url: string;
+  }>;
   branches?: Branch[];
 }
 
@@ -697,6 +703,39 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                   >
                     View Memorial / Obituary →
                   </a>
+                </Box>
+              )}
+
+              {/* Social Media & Web Links */}
+              {tree.links && tree.links.length > 0 && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {tree.links.map((link) => {
+                    const platform = detectPlatformFromUrl(link.url);
+                    const PlatformIcon = platform.icon;
+
+                    return (
+                      <Tooltip key={link.id} title={link.label || getDisplayLabelFromUrl(link.url)}>
+                        <IconButton
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          component="a"
+                          sx={{
+                            bgcolor: 'rgba(255,255,255,0.15)',
+                            color: 'white',
+                            width: 36,
+                            height: 36,
+                            '&:hover': {
+                              bgcolor: 'rgba(255,255,255,0.25)',
+                            },
+                          }}
+                        >
+                          <PlatformIcon sx={{ fontSize: '1.2rem' }} />
+                        </IconButton>
+                      </Tooltip>
+                    );
+                  })}
                 </Box>
               )}
 

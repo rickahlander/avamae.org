@@ -13,7 +13,7 @@ import {
   Alert,
   IconButton,
 } from '@mui/material';
-import { ArrowBack, Settings, PhotoCamera, Delete } from '@mui/icons-material';
+import { ArrowBack, Settings, PhotoCamera, Delete, Add, Link as LinkIcon } from '@mui/icons-material';
 
 export default function EditTreePage() {
   const params = useParams();
@@ -29,6 +29,7 @@ export default function EditTreePage() {
   });
   const [profilePhoto, setProfilePhoto] = useState<string>('');
   const [photos, setPhotos] = useState<string[]>([]);
+  const [links, setLinks] = useState<Array<{ label?: string; url: string }>>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -50,6 +51,8 @@ export default function EditTreePage() {
         setProfilePhoto(tree.rootPersonProfilePhoto || tree.rootPersonPhotoUrl || '');
         // Use transformed photos array
         setPhotos(tree.rootPersonPhotos || []);
+        // Load links
+        setLinks(tree.links || []);
       } catch (err) {
         console.error('Error loading tree:', err);
         setError('Failed to load tree data');
@@ -208,6 +211,7 @@ export default function EditTreePage() {
           ...formData,
           rootPersonPhotoUrl: profilePhoto,
           rootPersonPhotos: photos, // Additional photos stored in TreeMedia
+          links: links, // Social media and web links
         }),
       });
 
@@ -400,6 +404,65 @@ export default function EditTreePage() {
               helperText="Link to obituary, memorial page, or related website"
               variant="outlined"
             />
+
+            {/* Social Media & Web Links */}
+            <Box>
+              <Typography variant="body2" gutterBottom sx={{ fontWeight: 500, mb: 1 }}>
+                Social Media & Other Links (optional)
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                Add Facebook, Instagram, Twitter/X, LinkedIn, YouTube, or any other web links
+              </Typography>
+
+              {links.map((link, index) => (
+                <Box key={index} sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <TextField
+                    label="Label (optional)"
+                    placeholder="Facebook, Instagram, etc."
+                    value={link.label || ''}
+                    onChange={(e) => {
+                      const newLinks = [...links];
+                      newLinks[index] = { ...newLinks[index], label: e.target.value };
+                      setLinks(newLinks);
+                    }}
+                    sx={{ flex: '0 0 200px' }}
+                    size="small"
+                  />
+                  <TextField
+                    label="URL"
+                    placeholder="https://..."
+                    value={link.url}
+                    onChange={(e) => {
+                      const newLinks = [...links];
+                      newLinks[index] = { ...newLinks[index], url: e.target.value };
+                      setLinks(newLinks);
+                    }}
+                    sx={{ flex: 1 }}
+                    size="small"
+                    required
+                  />
+                  <IconButton
+                    onClick={() => {
+                      const newLinks = links.filter((_, i) => i !== index);
+                      setLinks(newLinks);
+                    }}
+                    color="error"
+                    size="small"
+                  >
+                    <Delete />
+                  </IconButton>
+                </Box>
+              ))}
+
+              <Button
+                startIcon={<Add />}
+                onClick={() => setLinks([...links, { label: '', url: '' }])}
+                variant="outlined"
+                size="small"
+              >
+                Add Link
+              </Button>
+            </Box>
 
             {/* Photo Upload */}
             <Box>

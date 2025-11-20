@@ -23,6 +23,11 @@ export async function GET(
           },
         },
         media: true,
+        links: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
         branches: {
           include: {
             branchType: true,
@@ -105,6 +110,7 @@ export async function PUT(
       url,
       rootPersonPhotoUrl,
       rootPersonPhotos,
+      links,
       moderationMode,
     } = body;
 
@@ -156,7 +162,27 @@ export async function PUT(
       }
     }
 
-    // Fetch updated tree with media
+    // Handle social media/web links if provided
+    if (links && Array.isArray(links)) {
+      // Delete existing links
+      await prisma.treeLink.deleteMany({
+        where: { treeId: id },
+      });
+
+      // Create new links
+      if (links.length > 0) {
+        await prisma.treeLink.createMany({
+          data: links.map((link: { label?: string; url: string }, index: number) => ({
+            treeId: id,
+            label: link.label || null,
+            url: link.url,
+            order: index,
+          })),
+        });
+      }
+    }
+
+    // Fetch updated tree with media and links
     const treeWithMedia = await prisma.tree.findUnique({
       where: { id },
       include: {
@@ -168,6 +194,11 @@ export async function PUT(
           },
         },
         media: true,
+        links: {
+          orderBy: {
+            order: 'asc',
+          },
+        },
       },
     });
 
