@@ -25,10 +25,9 @@ function renderTemplate(template: string, data: Record<string, string>): string 
   return rendered;
 }
 
-// Read email templates (do this once at module load)
-const templatesDir = join(process.cwd(), 'src', 'lib', 'email', 'templates');
-
+// Read email templates lazily (only when needed)
 function getTemplate(templateName: string): string {
+  const templatesDir = join(process.cwd(), 'src', 'lib', 'email', 'templates');
   return readFileSync(join(templatesDir, `${templateName}.html`), 'utf-8');
 }
 
