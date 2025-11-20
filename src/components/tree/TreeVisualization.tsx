@@ -593,31 +593,6 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
               )}
             </Box>
 
-            {/* Share a Story Button - Lower Right */}
-            {isSignedIn && (
-              <Box sx={{ position: 'absolute', bottom: 16, right: 16 }}>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowStoryForm(true);
-                  }}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.3)',
-                    },
-                  }}
-                >
-                  Share a Story
-                </Button>
-              </Box>
-            )}
-
             {/* Left section - Photo */}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Avatar
@@ -767,36 +742,61 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                 </Box>
               )}
 
-              {/* Stats - Informational Pills */}
-              <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-                <Box
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                    color: 'white',
-                    px: 2,
-                    py: 0.75,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                    border: '1px solid rgba(255,255,255,0.25)',
-                  }}
-                >
-                  {branches.length} {branches.length === 1 ? 'Branch' : 'Branches'}
+              {/* Stats - Informational Pills & Share Button */}
+              <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Box
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      color: 'white',
+                      px: 2,
+                      py: 0.75,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      border: '1px solid rgba(255,255,255,0.25)',
+                    }}
+                  >
+                    {branches.length} {branches.length === 1 ? 'Branch' : 'Branches'}
+                  </Box>
+                  <Box
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.15)',
+                      color: 'white',
+                      px: 2,
+                      py: 0.75,
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      border: '1px solid rgba(255,255,255,0.25)',
+                    }}
+                  >
+                    {rootBranches.length} Direct {rootBranches.length === 1 ? 'Impact' : 'Impacts'}
+                  </Box>
                 </Box>
-                <Box
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                    color: 'white',
-                    px: 2,
-                    py: 0.75,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                    border: '1px solid rgba(255,255,255,0.25)',
-                  }}
-                >
-                  {rootBranches.length} Direct {rootBranches.length === 1 ? 'Impact' : 'Impacts'}
-                </Box>
+
+                {/* Share a Story Button - Aligned with pills */}
+                {isSignedIn && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowStoryForm(true);
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      color: 'white',
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.3)',
+                      },
+                    }}
+                  >
+                    Share a Story
+                  </Button>
+                )}
               </Box>
             </Box>
           </Paper>
