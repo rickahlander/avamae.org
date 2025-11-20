@@ -107,17 +107,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate slug from name
+    // Generate slug from name  
     const baseSlug = rootPersonName
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+      .replace(/\s+/g, '-')          // Replace spaces with -
+      .replace(/-+/g, '-')           // Replace multiple - with single -
+      .replace(/^-+|-+$/g, '');      // Trim - from start/end
 
     // Ensure unique slug
     let slug = baseSlug;
     let counter = 1;
-    while (await prisma.tree.findUnique({ where: { slug } })) {
+    
+    // Check if slug exists
+    let existingTree = await prisma.tree.findUnique({ where: { slug } });
+    
+    while (existingTree) {
       slug = `${baseSlug}-${counter}`;
+      existingTree = await prisma.tree.findUnique({ where: { slug } });
       counter++;
     }
 
