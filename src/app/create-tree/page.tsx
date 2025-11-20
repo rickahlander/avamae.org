@@ -78,7 +78,7 @@ export default function CreateTreePage() {
     <Container maxWidth="md" sx={{ py: 8 }}>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom color="primary">
-          Create a Memorial Tree
+          Create a Legacy Tree
         </Typography>
         <Typography variant="body1" color="text.secondary">
           Honor your loved one by creating a living memorial that celebrates their life and the legacy they continue to create.
@@ -153,7 +153,7 @@ export default function CreateTreePage() {
                 color="primary"
                 disabled={loading}
               >
-                {loading ? 'Creating...' : 'Create Tree'}
+                {loading ? 'Creating...' : 'Create Legacy Tree'}
               </Button>
             </Box>
           </Stack>

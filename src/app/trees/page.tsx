@@ -82,7 +82,7 @@ export default function TreesPage() {
       {/* Header */}
       <Box sx={{ mb: 6, textAlign: 'center' }}>
         <Typography variant="h3" component="h1" color="primary" gutterBottom>
-          Explore Memorial Trees
+          Explore Legacy Trees
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           Discover how lives continue to bless others for generations
@@ -96,7 +96,7 @@ export default function TreesPage() {
             href="/create-tree"
             size="large"
           >
-            Create Your Tree
+            Create Your Legacy Tree
           </Button>
         )}
       </Box>
@@ -110,7 +110,7 @@ export default function TreesPage() {
       
       {loading ? (
         <Box sx={{ textAlign: 'center', py: 8 }}>
-          <Typography color="text.secondary">Loading trees...</Typography>
+          <Typography color="text.secondary">Loading legacy trees...</Typography>
         </Box>
       ) : trees.length === 0 ? (
         <Paper
@@ -124,12 +124,12 @@ export default function TreesPage() {
         >
           <AccountCircle sx={{ fontSize: 80, color: 'primary.light', mb: 2 }} />
           <Typography variant="h5" gutterBottom color="text.secondary">
-            No memorial trees yet
+            No legacy trees yet
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
             {isSignedIn 
-              ? 'Be the first to create a memorial tree and celebrate a life that continues to bless others'
-              : 'Sign in to create a memorial tree and celebrate a life that continues to bless others'
+              ? 'Be the first to create a legacy tree and celebrate a life that continues to bless others'
+              : 'Sign in to create a legacy tree and celebrate a life that continues to bless others'
             }
           </Typography>
           {isSignedIn && (
@@ -140,14 +140,14 @@ export default function TreesPage() {
               href="/create-tree"
               size="large"
             >
-              Create the First Tree
+              Create the First Legacy Tree
             </Button>
           )}
         </Paper>
       ) : (
         <>
           <Alert severity="info" sx={{ mb: 4 }}>
-            Showing {trees.length} memorial {trees.length === 1 ? 'tree' : 'trees'}
+            Showing {trees.length} legacy {trees.length === 1 ? 'tree' : 'trees'}
           </Alert>
 
           <Grid container spacing={3}>

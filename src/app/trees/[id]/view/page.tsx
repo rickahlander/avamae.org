@@ -126,7 +126,7 @@ export default function TreeViewPage() {
         </IconButton>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="caption" color="text.secondary" display="block">
-            Impact Tree
+            Legacy Tree
           </Typography>
           <Typography variant="h4" component="h1" fontWeight="bold">
             {tree.rootPersonName}
@@ -339,8 +339,8 @@ export default function TreeViewPage() {
         {/* Sidebar */}
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom fontWeight={600}>
-              Impact Tree
+            <Typography variant="h6" gutterBottom fontWeight{600}>
+              Legacy Tree
             </Typography>
 
             {/* Branch Count - Info Pill */}

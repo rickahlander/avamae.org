@@ -121,7 +121,7 @@ export default function BranchViewPage() {
         </IconButton>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="caption" color="text.secondary" display="block">
-            {tree.rootPersonName}'s Impact Tree
+            {tree.rootPersonName}'s Legacy Tree
           </Typography>
           <Typography variant="h4" component="h1" fontWeight="bold">
             {branch.title}

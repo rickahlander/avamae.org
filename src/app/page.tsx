@@ -31,7 +31,7 @@ export default function HomePage() {
             component={Link}
             href="/create-tree"
           >
-            Create a Tree
+            Create a Legacy Tree
           </Button>
           <Button
             variant="outlined"
@@ -40,7 +40,7 @@ export default function HomePage() {
             component={Link}
             href="/trees"
           >
-            Explore Trees
+            Explore Legacy Trees
           </Button>
         </Box>
 

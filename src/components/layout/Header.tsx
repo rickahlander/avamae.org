@@ -42,7 +42,7 @@ export default function Header() {
 
   const navigationLinks = [
     { label: 'Home', path: '/', icon: <Home /> },
-    { label: 'Trees', path: '/trees', icon: <Diversity1 /> },
+    { label: 'Legacy Trees', path: '/trees', icon: <Diversity1 /> },
   ];
 
   return (
