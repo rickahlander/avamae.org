@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  AccountTree,
+  Diversity1,
   Login,
   PersonAdd,
   Home,
@@ -42,7 +42,7 @@ export default function Header() {
 
   const navigationLinks = [
     { label: 'Home', path: '/', icon: <Home /> },
-    { label: 'Trees', path: '/trees', icon: <AccountTree /> },
+    { label: 'Trees', path: '/trees', icon: <Diversity1 /> },
   ];
 
   return (
@@ -68,7 +68,7 @@ export default function Header() {
               mr: 4,
             }}
           >
-            <AccountTree sx={{ fontSize: 32, color: 'primary.main', mr: 1 }} />
+            <Diversity1 sx={{ fontSize: 32, color: 'primary.main', mr: 1 }} />
             <Typography
               variant="h6"
               component="div"

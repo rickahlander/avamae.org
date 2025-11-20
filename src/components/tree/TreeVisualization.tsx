@@ -569,28 +569,6 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
             }}
           >
             <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 1 }}>
-              {isSignedIn && (
-                <Tooltip title="Share a story">
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowStoryForm(true);
-                    }}
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.2)',
-                      color: 'white',
-                      width: 32,
-                      height: 32,
-                      '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.3)',
-                      },
-                    }}
-                  >
-                    <CreateOutlined sx={{ fontSize: '1.2rem' }} />
-                  </IconButton>
-                </Tooltip>
-              )}
               {canEdit && (
                 <Tooltip title="Edit tree">
                   <IconButton
@@ -785,6 +763,35 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                   }}
                 />
               </Box>
+
+              {/* Share a Story Button */}
+              {isSignedIn && (
+                <Box sx={{ mt: 3, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<CreateOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowStoryForm(true);
+                    }}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.25)',
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      px: 3,
+                      py: 1.5,
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.35)',
+                      },
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    }}
+                  >
+                    Share a Story
+                  </Button>
+                </Box>
+              )}
             </Box>
           </Paper>
         </Box>
