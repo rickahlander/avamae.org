@@ -153,10 +153,8 @@ export default function StorySubmissionForm({
         },
       }}
     >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" fontWeight={600}>
-          Share a Story about {treeName}
-        </Typography>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 600 }}>
+        Share a Story about {treeName}
         <IconButton onClick={handleClose} size="small">
           <Close />
         </IconButton>

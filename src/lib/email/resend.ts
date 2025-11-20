@@ -46,42 +46,50 @@ export async function sendStoryApprovalNotification(
               body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
                 line-height: 1.6;
-                color: #333;
+                color: #36454F;
                 max-width: 600px;
                 margin: 0 auto;
                 padding: 20px;
+                background-color: #FAF9F6;
               }
               .header {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #D4AF37 0%, #B8962D 100%);
                 color: white;
                 padding: 30px;
                 border-radius: 8px 8px 0 0;
                 text-align: center;
               }
               .header h1 {
-                margin: 0;
+                margin: 10px 0 0 0;
                 font-size: 24px;
+                font-weight: 700;
+              }
+              .logo {
+                font-size: 36px;
+                margin-bottom: 5px;
               }
               .content {
                 background: #ffffff;
                 padding: 30px;
-                border: 1px solid #e0e0e0;
+                border: 1px solid #E8E8E8;
                 border-top: none;
               }
               .story-info {
-                background: #f5f5f5;
+                background: #FAF9F6;
                 padding: 20px;
                 border-radius: 8px;
                 margin: 20px 0;
+                border-left: 4px solid #D4AF37;
               }
               .story-info h2 {
                 margin-top: 0;
-                color: #667eea;
+                color: #D4AF37;
                 font-size: 18px;
+                font-weight: 600;
               }
               .story-info p {
                 margin: 8px 0;
-                color: #666;
+                color: #5A6C7D;
               }
               .button-container {
                 text-align: center;
@@ -92,37 +100,39 @@ export async function sendStoryApprovalNotification(
                 padding: 12px 30px;
                 margin: 0 10px;
                 text-decoration: none;
-                border-radius: 6px;
+                border-radius: 12px;
                 font-weight: 600;
                 font-size: 14px;
               }
               .button-approve {
-                background-color: #10b981;
+                background-color: #8FBC8F;
                 color: white;
               }
               .button-reject {
-                background-color: #ef4444;
+                background-color: #FF7F50;
                 color: white;
               }
               .button-view {
-                background-color: #667eea;
+                background-color: #D4AF37;
                 color: white;
               }
               .footer {
                 text-align: center;
                 padding: 20px;
-                color: #999;
+                color: #5A6C7D;
                 font-size: 12px;
               }
               .footer a {
-                color: #667eea;
+                color: #D4AF37;
                 text-decoration: none;
               }
             </style>
           </head>
           <body>
             <div class="header">
-              <h1>New Story Awaiting Approval</h1>
+              <div class="logo">🌳</div>
+              <h1>Ava Mae</h1>
+              <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">New Story Awaiting Approval</p>
             </div>
             <div class="content">
               <p>Hi ${recipientName},</p>
@@ -213,46 +223,58 @@ export async function sendStoryRejectionNotification(
               body {
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
                 line-height: 1.6;
-                color: #333;
+                color: #36454F;
                 max-width: 600px;
                 margin: 0 auto;
                 padding: 20px;
+                background-color: #FAF9F6;
               }
               .header {
-                background: #ef4444;
+                background: linear-gradient(135deg, #FF7F50 0%, #E6653F 100%);
                 color: white;
                 padding: 30px;
                 border-radius: 8px 8px 0 0;
                 text-align: center;
               }
               .header h1 {
-                margin: 0;
+                margin: 10px 0 0 0;
                 font-size: 24px;
+                font-weight: 700;
+              }
+              .logo {
+                font-size: 36px;
+                margin-bottom: 5px;
               }
               .content {
                 background: #ffffff;
                 padding: 30px;
-                border: 1px solid #e0e0e0;
+                border: 1px solid #E8E8E8;
                 border-top: none;
               }
               .story-info {
-                background: #fee;
+                background: #FFF5F5;
                 padding: 20px;
                 border-radius: 8px;
                 margin: 20px 0;
-                border-left: 4px solid #ef4444;
+                border-left: 4px solid #FF7F50;
               }
               .footer {
                 text-align: center;
                 padding: 20px;
-                color: #999;
+                color: #5A6C7D;
                 font-size: 12px;
+              }
+              .footer a {
+                color: #D4AF37;
+                text-decoration: none;
               }
             </style>
           </head>
           <body>
             <div class="header">
-              <h1>Story Not Approved</h1>
+              <div class="logo">🌳</div>
+              <h1>Ava Mae</h1>
+              <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Story Not Approved</p>
             </div>
             <div class="content">
               <p>Hi ${recipientName},</p>

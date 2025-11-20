@@ -13,6 +13,7 @@ import {
   Link as MuiLink,
 } from '@mui/material';
 import { Person, CalendarToday } from '@mui/icons-material';
+import { formatNameForDisplay } from '@/utils/privacy';
 
 interface Story {
   id: string;
@@ -89,14 +90,14 @@ export default function StoryList({ stories, emptyMessage = 'No stories yet. Be 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
               <Avatar
                 src={story.author.avatarUrl || undefined}
-                alt={story.author.name}
+                alt={formatNameForDisplay(story.author.name)}
                 sx={{ width: 48, height: 48 }}
               >
                 <Person />
               </Avatar>
               <Box sx={{ flex: 1 }}>
                 <Typography variant="subtitle1" fontWeight={600}>
-                  {story.author.name}
+                  {formatNameForDisplay(story.author.name)}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
                   <CalendarToday sx={{ fontSize: 14 }} />
