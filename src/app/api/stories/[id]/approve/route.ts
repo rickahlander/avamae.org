@@ -3,11 +3,8 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db/prisma';
 import { canApproveStory } from '@/lib/permissions/acl';
 
-// POST /api/stories/:id/approve - Approve a story
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// Shared approval logic
+async function approveStory(params: Promise<{ id: string }>) {
   try {
     const { userId } = await auth();
 
@@ -90,11 +87,44 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(story);
+    return { success: true, story };
   } catch (error) {
     console.error('Error approving story:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to approve story' };
+  }
+}
+
+// GET /api/stories/:id/approve - Approve via email link
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const result = await approveStory(params);
+  
+  if (result.success) {
+    const story = result.story!;
+    // Redirect to the tree page with a success message
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://avamae.org';
+    return NextResponse.redirect(`${appUrl}/trees/${story.treeId}?story=approved`);
+  } else {
+    // Redirect with error
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://avamae.org';
+    return NextResponse.redirect(`${appUrl}?error=${encodeURIComponent(result.error || 'Failed to approve story')}`);
+  }
+}
+
+// POST /api/stories/:id/approve - Approve via API
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const result = await approveStory(params);
+  
+  if (result.success) {
+    return NextResponse.json(result.story);
+  } else {
     return NextResponse.json(
-      { error: 'Failed to approve story' },
+      { error: result.error },
       { status: 500 }
     );
   }

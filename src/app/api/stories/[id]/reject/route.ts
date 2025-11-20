@@ -4,19 +4,13 @@ import { prisma } from '@/lib/db/prisma';
 import { canApproveStory } from '@/lib/permissions/acl';
 import { sendStoryRejectionNotification } from '@/lib/email/resend';
 
-// POST /api/stories/:id/reject - Reject (delete) a story
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// Shared rejection logic
+async function rejectStory(params: Promise<{ id: string }>, reason?: string) {
   try {
     const { userId } = await auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return { success: false, error: 'Unauthorized', status: 401 };
     }
 
     const user = await prisma.user.findUnique({
@@ -24,23 +18,15 @@ export async function POST(
     });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return { success: false, error: 'User not found', status: 404 };
     }
 
     const { id: storyId } = await params;
-    const body = await request.json().catch(() => ({}));
-    const { reason } = body;
 
     // Check permissions
     const canReject = await canApproveStory(user.id, storyId);
     if (!canReject) {
-      return NextResponse.json(
-        { error: 'You do not have permission to reject this story' },
-        { status: 403 }
-      );
+      return { success: false, error: 'You do not have permission to reject this story', status: 403 };
     }
 
     // Get story details before deletion
@@ -55,6 +41,7 @@ export async function POST(
         },
         tree: {
           select: {
+            id: true,
             rootPersonName: true,
           },
         },
@@ -62,10 +49,7 @@ export async function POST(
     });
 
     if (!story) {
-      return NextResponse.json(
-        { error: 'Story not found' },
-        { status: 404 }
-      );
+      return { success: false, error: 'Story not found', status: 404 };
     }
 
     // Send rejection notification to author
@@ -86,15 +70,50 @@ export async function POST(
       where: { id: storyId },
     });
 
+    return { success: true, treeId: story.tree.id };
+  } catch (error) {
+    console.error('Error rejecting story:', error);
+    return { success: false, error: 'Failed to reject story', status: 500 };
+  }
+}
+
+// GET /api/stories/:id/reject - Reject via email link
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const result = await rejectStory(params);
+  
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://avamae.org';
+  
+  if (result.success) {
+    // Redirect to the tree page with a success message
+    return NextResponse.redirect(`${appUrl}/trees/${result.treeId}?story=rejected`);
+  } else {
+    // Redirect with error
+    return NextResponse.redirect(`${appUrl}?error=${encodeURIComponent(result.error || 'Failed to reject story')}`);
+  }
+}
+
+// POST /api/stories/:id/reject - Reject via API
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const body = await request.json().catch(() => ({}));
+  const { reason } = body;
+  
+  const result = await rejectStory(params, reason);
+  
+  if (result.success) {
     return NextResponse.json({ 
       success: true,
       message: 'Story rejected and removed',
     });
-  } catch (error) {
-    console.error('Error rejecting story:', error);
+  } else {
     return NextResponse.json(
-      { error: 'Failed to reject story' },
-      { status: 500 }
+      { error: result.error },
+      { status: result.status || 500 }
     );
   }
 }
