@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { ArrowBack, Add } from '@mui/icons-material';
 import TreeVisualization from '@/components/tree/TreeVisualization';
+import ShareButton from '@/components/ShareButton';
 
 interface TreeData {
   id: string;
@@ -109,16 +110,23 @@ export default function TreeViewPage() {
           Back
         </Button>
 
-        {isSignedIn && (
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => router.push(`/trees/${tree.id}/add-branch`)}
-            color="secondary"
-          >
-            Add Branch
-          </Button>
-        )}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <ShareButton
+            url={`${window.location.origin}/trees/${tree.slug || tree.id}`}
+            title={`${tree.rootPersonName}'s Legacy Tree`}
+            text={`Explore ${tree.rootPersonName}'s legacy tree on Avamae`}
+          />
+          {isSignedIn && (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => router.push(`/trees/${tree.slug || tree.id}/add-branch`)}
+              color="secondary"
+            >
+              Add Branch
+            </Button>
+          )}
+        </Box>
       </Box>
 
       {/* Tree Title */}

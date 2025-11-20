@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db/prisma';
 import { canViewTree, canEditTree, canDeleteTree } from '@/lib/permissions/acl';
 import { getAuthenticatedUserId } from '@/lib/auth/user';
 
-// GET /api/trees/[id] - Get a specific tree
+// GET /api/trees/[id] - Get a specific tree (by ID or slug)
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -12,8 +12,11 @@ export async function GET(
     const { id } = await params;
     const userId = await getAuthenticatedUserId();
 
+    // Check if id is a UUID or a slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+    
     const tree = await prisma.tree.findUnique({
-      where: { id },
+      where: isUUID ? { id } : { slug: id },
       include: {
         owner: {
           select: {

@@ -226,7 +226,7 @@ export default function TreesPage() {
                       fullWidth
                       variant="contained"
                       endIcon={<ArrowForward />}
-                      onClick={() => router.push(`/trees/${tree.id}`)}
+                      onClick={() => router.push(`/trees/${tree.slug || tree.id}`)}
                     >
                       View Tree
                     </Button>
