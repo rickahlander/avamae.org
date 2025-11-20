@@ -39,7 +39,7 @@ export async function sendStoryApprovalNotification(
   try {
     const resend = getResendClient();
     const { data, error } = await resend.emails.send({
-      from: 'Avamae <notifications@notify.avamae.org>',
+      from: 'Avamae <noreply@notify.avamae.org>',
       to: [recipientEmail],
       subject: `New Story Submitted for ${treeName}`,
       html: `
@@ -219,7 +219,7 @@ export async function sendStoryRejectionNotification(
   try {
     const resend = getResendClient();
     const { data, error } = await resend.emails.send({
-      from: 'Avamae <notifications@notify.avamae.org>',
+      from: 'Avamae <noreply@notify.avamae.org>',
       to: [recipientEmail],
       subject: `Story Not Approved: ${storyTitle}`,
       html: `
