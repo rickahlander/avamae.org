@@ -7,7 +7,7 @@ import { sendStoryRejectionNotification } from '@/lib/email/resend';
 // POST /api/stories/:id/reject - Reject (delete) a story
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -30,7 +30,7 @@ export async function POST(
       );
     }
 
-    const storyId = params.id;
+    const { id: storyId } = await params;
     const body = await request.json().catch(() => ({}));
     const { reason } = body;
 

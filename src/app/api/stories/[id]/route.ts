@@ -6,10 +6,10 @@ import { canEditStory, canDeleteStory } from '@/lib/permissions/acl';
 // GET /api/stories/:id - Get a single story
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const storyId = params.id;
+    const { id: storyId } = await params;
 
     const story = await prisma.story.findUnique({
       where: { id: storyId },
@@ -81,7 +81,7 @@ export async function GET(
 // PUT /api/stories/:id - Update a story
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -104,7 +104,7 @@ export async function PUT(
       );
     }
 
-    const storyId = params.id;
+    const { id: storyId } = await params;
     const body = await request.json();
     const { title, content, photos } = body;
 
@@ -202,7 +202,7 @@ export async function PUT(
 // DELETE /api/stories/:id - Delete a story
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await auth();
@@ -225,7 +225,7 @@ export async function DELETE(
       );
     }
 
-    const storyId = params.id;
+    const { id: storyId } = await params;
 
     // Check permissions
     const canDelete = await canDeleteStory(user.id, storyId);
