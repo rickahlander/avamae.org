@@ -355,15 +355,22 @@ export default function TreeViewPage() {
 
             {/* Branch Count - Info Pill */}
             <Box sx={{ mb: 3 }}>
-              <Chip
-                label={`${tree.branches?.length || 0} ${tree.branches?.length === 1 ? 'Branch' : 'Branches'}`}
-                color="primary"
+              <Box
                 sx={{
+                  display: 'inline-block',
+                  bgcolor: 'primary.light',
+                  color: 'primary.contrastText',
+                  px: 2,
+                  py: 0.75,
+                  borderRadius: 2,
                   fontWeight: 600,
                   fontSize: '0.9rem',
-                  cursor: 'default',
+                  border: '1px solid',
+                  borderColor: 'primary.main',
                 }}
-              />
+              >
+                {tree.branches?.length || 0} {tree.branches?.length === 1 ? 'Branch' : 'Branches'}
+              </Box>
             </Box>
 
             {/* Created By */}

@@ -773,26 +773,34 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
 
               {/* Stats - Informational Pills */}
               <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-                <Chip
-                  label={`${branches.length} ${branches.length === 1 ? 'Branch' : 'Branches'}`}
+                <Box
                   sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
+                    bgcolor: 'rgba(255,255,255,0.15)',
                     color: 'white',
+                    px: 2,
+                    py: 0.75,
+                    borderRadius: 2,
                     fontWeight: 600,
                     fontSize: '0.9rem',
-                    cursor: 'default',
+                    border: '1px solid rgba(255,255,255,0.25)',
                   }}
-                />
-                <Chip
-                  label={`${rootBranches.length} Direct ${rootBranches.length === 1 ? 'Impact' : 'Impacts'}`}
+                >
+                  {branches.length} {branches.length === 1 ? 'Branch' : 'Branches'}
+                </Box>
+                <Box
                   sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
+                    bgcolor: 'rgba(255,255,255,0.15)',
                     color: 'white',
+                    px: 2,
+                    py: 0.75,
+                    borderRadius: 2,
                     fontWeight: 600,
                     fontSize: '0.9rem',
-                    cursor: 'default',
+                    border: '1px solid rgba(255,255,255,0.25)',
                   }}
-                />
+                >
+                  {rootBranches.length} Direct {rootBranches.length === 1 ? 'Impact' : 'Impacts'}
+                </Box>
               </Box>
             </Box>
           </Paper>
