@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import {
   Box,
   Container,
@@ -38,6 +39,7 @@ interface Tree {
 export default function TreeViewPage() {
   const params = useParams();
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const [tree, setTree] = useState<Tree | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -104,13 +106,15 @@ export default function TreeViewPage() {
             {tree.rootPersonName}
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<Edit />}
-          onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
-        >
-          Edit
-        </Button>
+        {isSignedIn && (
+          <Button
+            variant="outlined"
+            startIcon={<Edit />}
+            onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
+          >
+            Edit
+          </Button>
+        )}
       </Box>
 
       <Grid container spacing={3}>

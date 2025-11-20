@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import {
   Box,
   Container,
@@ -51,6 +52,7 @@ interface Tree {
 export default function BranchViewPage() {
   const params = useParams();
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const [branch, setBranch] = useState<Branch | null>(null);
   const [tree, setTree] = useState<Tree | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,13 +127,15 @@ export default function BranchViewPage() {
             {branch.title}
           </Typography>
         </Box>
-        <Button
-          variant="outlined"
-          startIcon={<Edit />}
-          onClick={() => router.push(`/trees/${params.id}/edit-branch/${branch.id}`)}
-        >
-          Edit
-        </Button>
+        {isSignedIn && (
+          <Button
+            variant="outlined"
+            startIcon={<Edit />}
+            onClick={() => router.push(`/trees/${params.id}/edit-branch/${branch.id}`)}
+          >
+            Edit
+          </Button>
+        )}
       </Box>
 
       <Grid container spacing={3}>
