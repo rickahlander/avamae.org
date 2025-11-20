@@ -133,23 +133,13 @@ export default function TreeViewPage() {
           </Typography>
         </Box>
         {isSignedIn && (
-          <>
-            <Button
-              variant="contained"
-              startIcon={<CreateOutlined />}
-              onClick={() => setShowStoryForm(true)}
-              sx={{ mr: 1 }}
-            >
-              Share a Story
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<Edit />}
-              onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
-            >
-              Edit
-            </Button>
-          </>
+          <Button
+            variant="outlined"
+            startIcon={<Edit />}
+            onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
+          >
+            Edit
+          </Button>
         )}
       </Box>
 
@@ -271,6 +261,25 @@ export default function TreeViewPage() {
               </Box>
             )}
 
+            {/* Share a Story Button */}
+            {isSignedIn && (
+              <Box sx={{ mb: 3 }}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<CreateOutlined />}
+                  onClick={() => setShowStoryForm(true)}
+                  fullWidth
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 600,
+                  }}
+                >
+                  Share a Story
+                </Button>
+              </Box>
+            )}
+
             {/* Additional Photos */}
             {tree.rootPersonPhotos && tree.rootPersonPhotos.length > 0 && (
               <Box>
@@ -329,21 +338,9 @@ export default function TreeViewPage() {
 
           {/* Stories Section */}
           <Paper sx={{ p: 3, mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-              <Typography variant="h5" fontWeight={600}>
-                Stories & Memories
-              </Typography>
-              {isSignedIn && (
-                <Button
-                  variant="outlined"
-                  startIcon={<CreateOutlined />}
-                  onClick={() => setShowStoryForm(true)}
-                  size="small"
-                >
-                  Share a Story
-                </Button>
-              )}
-            </Box>
+            <Typography variant="h5" fontWeight={600} gutterBottom>
+              Stories & Memories
+            </Typography>
             <Divider sx={{ mb: 3 }} />
             <StoryList stories={stories.filter((s) => s.approved)} />
           </Paper>
@@ -356,14 +353,17 @@ export default function TreeViewPage() {
               Impact Tree
             </Typography>
 
-            {/* Branch Count */}
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                Total Branches
-              </Typography>
-              <Typography variant="body2">
-                {tree.branches?.length || 0}
-              </Typography>
+            {/* Branch Count - Info Pill */}
+            <Box sx={{ mb: 3 }}>
+              <Chip
+                label={`${tree.branches?.length || 0} ${tree.branches?.length === 1 ? 'Branch' : 'Branches'}`}
+                color="primary"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  cursor: 'default',
+                }}
+              />
             </Box>
 
             {/* Created By */}

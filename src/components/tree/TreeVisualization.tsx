@@ -711,7 +711,7 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
 
               {/* Social Media & Web Links */}
               {tree.links && tree.links.length > 0 && (
-                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
                   {tree.links.map((link) => {
                     const platform = detectPlatformFromUrl(link.url);
                     const PlatformIcon = platform.icon;
@@ -742,31 +742,9 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                 </Box>
               )}
 
-              {/* Stats */}
-              <Box sx={{ display: 'flex', gap: 2, mt: 2, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-                <Chip
-                  label={`${branches.length} ${branches.length === 1 ? 'Branch' : 'Branches'}`}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                  }}
-                />
-                <Chip
-                  label={`${rootBranches.length} Direct ${rootBranches.length === 1 ? 'Impact' : 'Impacts'}`}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.9rem',
-                  }}
-                />
-              </Box>
-
               {/* Share a Story Button */}
               {isSignedIn && (
-                <Box sx={{ mt: 3, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
                   <Button
                     variant="contained"
                     size="large"
@@ -792,6 +770,30 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                   </Button>
                 </Box>
               )}
+
+              {/* Stats - Informational Pills */}
+              <Box sx={{ display: 'flex', gap: 2, mt: 3, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+                <Chip
+                  label={`${branches.length} ${branches.length === 1 ? 'Branch' : 'Branches'}`}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    cursor: 'default',
+                  }}
+                />
+                <Chip
+                  label={`${rootBranches.length} Direct ${rootBranches.length === 1 ? 'Impact' : 'Impacts'}`}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.9rem',
+                    cursor: 'default',
+                  }}
+                />
+              </Box>
             </Box>
           </Paper>
         </Box>
