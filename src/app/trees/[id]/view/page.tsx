@@ -17,7 +17,7 @@ import {
   Avatar,
   Divider,
 } from '@mui/material';
-import { ArrowBack, Edit, CalendarToday, Link as LinkIcon, AccountCircle, CreateOutlined } from '@mui/icons-material';
+import { ArrowBack, Edit, CalendarToday, Link as LinkIcon, AccountCircle, CreateOutlined, AutoStories } from '@mui/icons-material';
 import { detectPlatformFromUrl, getDisplayLabelFromUrl } from '@/utils/socialIcons';
 import StorySubmissionForm from '@/components/stories/StorySubmissionForm';
 import StoryList from '@/components/stories/StoryList';
@@ -136,6 +136,7 @@ export default function TreeViewPage() {
           <>
             <Button
               variant="contained"
+              startIcon={<AutoStories />}
               onClick={() => setShowStoryForm(true)}
             >
               Share a Story

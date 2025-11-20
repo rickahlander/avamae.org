@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
-import { AccountCircle, Add, Edit, Settings, Delete, HelpOutline, CreateOutlined } from '@mui/icons-material';
+import { AccountCircle, Add, Edit, Settings, Delete, HelpOutline, CreateOutlined, AutoStories } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { getBranchTypeConfig } from '@/constants/branchTypes';
@@ -780,6 +780,7 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                   <Button
                     variant="contained"
                     size="small"
+                    startIcon={<AutoStories />}
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowStoryForm(true);
