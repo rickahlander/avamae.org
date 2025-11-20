@@ -79,7 +79,7 @@ export default function ShareButton({
     <>
       <Button
         variant="outlined"
-        startIcon={copied ? <Check /> : <ContentCopy />}
+        startIcon={copied ? <Check /> : <Share />}
         onClick={handleShare}
         size={size}
       >

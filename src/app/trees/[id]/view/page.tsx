@@ -339,7 +339,7 @@ export default function TreeViewPage() {
         {/* Sidebar */}
         <Grid item xs={12} md={4}>
           <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom fontWeight{600}>
+            <Typography variant="h6" gutterBottom fontWeight={600}>
               Legacy Tree
             </Typography>
 
