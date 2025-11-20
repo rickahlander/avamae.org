@@ -3,8 +3,76 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db/prisma';
 import { canApproveStory } from '@/lib/permissions/acl';
 
-// Shared approval logic
-async function approveStory(params: Promise<{ id: string }>) {
+// GET /api/stories/:id/approve - Approve via email link
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { userId } = await auth();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://avamae.org';
+
+    if (!userId) {
+      return NextResponse.redirect(`${appUrl}/sign-in?redirect_url=${encodeURIComponent(request.url)}`);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      return NextResponse.redirect(`${appUrl}?error=User+not+found`);
+    }
+
+    const { id: storyId } = await params;
+
+    // Check permissions
+    const canApprove = await canApproveStory(user.id, storyId);
+    if (!canApprove) {
+      return NextResponse.redirect(`${appUrl}?error=Permission+denied`);
+    }
+
+    // Verify story exists
+    const existingStory = await prisma.story.findUnique({
+      where: { id: storyId },
+      select: {
+        id: true,
+        approved: true,
+        treeId: true,
+      },
+    });
+
+    if (!existingStory) {
+      return NextResponse.redirect(`${appUrl}?error=Story+not+found`);
+    }
+
+    if (existingStory.approved) {
+      return NextResponse.redirect(`${appUrl}/trees/${existingStory.treeId}?story=already_approved`);
+    }
+
+    // Approve story
+    await prisma.story.update({
+      where: { id: storyId },
+      data: {
+        approved: true,
+        approvedBy: user.id,
+      },
+    });
+
+    // Redirect to the tree page with a success message
+    return NextResponse.redirect(`${appUrl}/trees/${existingStory.treeId}?story=approved`);
+  } catch (error) {
+    console.error('Error approving story:', error);
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://avamae.org';
+    return NextResponse.redirect(`${appUrl}?error=Failed+to+approve+story`);
+  }
+}
+
+// POST /api/stories/:id/approve - Approve via API
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { userId } = await auth();
 
@@ -87,44 +155,11 @@ async function approveStory(params: Promise<{ id: string }>) {
       },
     });
 
-    return { success: true, story };
+    return NextResponse.json(story);
   } catch (error) {
     console.error('Error approving story:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to approve story' };
-  }
-}
-
-// GET /api/stories/:id/approve - Approve via email link
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const result = await approveStory(params);
-  
-  if (result.success) {
-    const story = result.story!;
-    // Redirect to the tree page with a success message
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://avamae.org';
-    return NextResponse.redirect(`${appUrl}/trees/${story.treeId}?story=approved`);
-  } else {
-    // Redirect with error
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://avamae.org';
-    return NextResponse.redirect(`${appUrl}?error=${encodeURIComponent(result.error || 'Failed to approve story')}`);
-  }
-}
-
-// POST /api/stories/:id/approve - Approve via API
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const result = await approveStory(params);
-  
-  if (result.success) {
-    return NextResponse.json(result.story);
-  } else {
     return NextResponse.json(
-      { error: result.error },
+      { error: 'Failed to approve story' },
       { status: 500 }
     );
   }
