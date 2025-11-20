@@ -593,6 +593,31 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
               )}
             </Box>
 
+            {/* Share a Story Button - Lower Right */}
+            {isSignedIn && (
+              <Box sx={{ position: 'absolute', bottom: 16, right: 16 }}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowStoryForm(true);
+                  }}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    fontWeight: 600,
+                    textTransform: 'none',
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.3)',
+                    },
+                  }}
+                >
+                  Share a Story
+                </Button>
+              </Box>
+            )}
+
             {/* Left section - Photo */}
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Avatar
@@ -739,35 +764,6 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
                       </Tooltip>
                     );
                   })}
-                </Box>
-              )}
-
-              {/* Share a Story Button */}
-              {isSignedIn && (
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<CreateOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowStoryForm(true);
-                    }}
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.25)',
-                      color: 'white',
-                      fontWeight: 600,
-                      fontSize: '1rem',
-                      px: 3,
-                      py: 1.5,
-                      '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.35)',
-                      },
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    }}
-                  >
-                    Share a Story
-                  </Button>
                 </Box>
               )}
 

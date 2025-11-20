@@ -133,13 +133,21 @@ export default function TreeViewPage() {
           </Typography>
         </Box>
         {isSignedIn && (
-          <Button
-            variant="outlined"
-            startIcon={<Edit />}
-            onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
-          >
-            Edit
-          </Button>
+          <>
+            <Button
+              variant="contained"
+              onClick={() => setShowStoryForm(true)}
+            >
+              Share a Story
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<Edit />}
+              onClick={() => router.push(`/trees/${params.id}/edit-tree`)}
+            >
+              Edit
+            </Button>
+          </>
         )}
       </Box>
 
@@ -258,25 +266,6 @@ export default function TreeViewPage() {
                     );
                   })}
                 </Box>
-              </Box>
-            )}
-
-            {/* Share a Story Button */}
-            {isSignedIn && (
-              <Box sx={{ mb: 3 }}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<CreateOutlined />}
-                  onClick={() => setShowStoryForm(true)}
-                  fullWidth
-                  sx={{
-                    py: 1.5,
-                    fontWeight: 600,
-                  }}
-                >
-                  Share a Story
-                </Button>
               </Box>
             )}
 
