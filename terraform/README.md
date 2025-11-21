@@ -7,14 +7,18 @@ This directory contains the Terraform configuration for deploying the Avamae pla
 1. **Terraform** installed (>= 1.0)
 2. **AWS CLI** configured with appropriate credentials
 3. **AWS Account** with necessary permissions
-4. **GitHub Personal Access Token** (for Amplify deployment)
+4. **Docker** installed (for building container images)
 
 ## Infrastructure Components
 
+- **ECS with Fargate**: Container orchestration for Next.js SSR
+- **ECR**: Docker container registry
+- **Application Load Balancer**: HTTPS/SSL termination and traffic distribution
 - **RDS PostgreSQL**: Database for application data
 - **S3 + CloudFront**: Media storage and CDN
-- **AWS Amplify**: Next.js application hosting with SSR
-- **SES**: Email service for notifications and invitations
+- **Route53**: DNS management for custom domain
+- **ACM**: SSL/TLS certificates
+- **Resend**: Transactional email service (external, API key required)
 
 ## Setup Instructions
 
@@ -63,23 +67,52 @@ terraform apply
 
 Review the changes and type `yes` to confirm.
 
-### 6. Configure DNS
+### 6. Configure DNS (Optional - Custom Domain)
 
-After deployment, you'll need to configure DNS records:
+After deployment, Terraform creates Route53 records for `avamae.org` and `www.avamae.org` pointing to the ALB.
 
-#### For SES (Email):
-Add the following DNS records (get values from Terraform outputs):
-- TXT record for domain verification
-- CNAME records for DKIM
-
-#### For Custom Domain (Optional):
-Configure your domain registrar to point to:
-- Amplify app domain (from Terraform output)
-- Or configure custom domain in Amplify console
+If you're using an external DNS provider, configure your domain to point to:
+- Get ALB DNS name from: `terraform output alb_dns_name`
+- Create a CNAME record pointing your domain to the ALB
 
 ## Post-Deployment
 
-### 1. Database Setup
+### 1. Build and Push Docker Image
+
+```bash
+# Login to ECR
+aws ecr get-login-password --region us-west-2 --profile <your-profile> | \
+  docker login --username AWS --password-stdin $(terraform output -raw ecr_repository_url | cut -d'/' -f1)
+
+# Build image with production environment variables
+docker build \
+  --build-arg DATABASE_URL="$(terraform output -raw database_url)" \
+  --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="<your-clerk-key>" \
+  --build-arg CLERK_SECRET_KEY="<your-clerk-secret>" \
+  --build-arg NEXT_PUBLIC_APP_URL="https://avamae.org" \
+  --build-arg AWS_S3_BUCKET="$(terraform output -raw s3_bucket_name)" \
+  --build-arg AWS_CLOUDFRONT_DOMAIN="$(terraform output -raw cloudfront_domain)" \
+  --build-arg STORAGE_TYPE="s3" \
+  --build-arg RESEND_API_KEY="<your-resend-key>" \
+  -t avamae-app:latest .
+
+# Tag and push
+docker tag avamae-app:latest $(terraform output -raw ecr_repository_url):latest
+docker push $(terraform output -raw ecr_repository_url):latest
+```
+
+### 2. Deploy to ECS
+
+```bash
+# Force new deployment to pick up the Docker image
+aws ecs update-service \
+  --cluster avamae-production \
+  --service avamae-production \
+  --force-new-deployment \
+  --region us-west-2
+```
+
+### 3. Database Setup
 
 Connect to the RDS instance and run Prisma migrations:
 
@@ -90,29 +123,18 @@ terraform output database_url
 # Set environment variable
 export DATABASE_URL="<database_url_from_output>"
 
-# Run migrations
+# Run migrations and seed
 cd ..
-npx prisma migrate deploy
+npx prisma db push
+npm run db:seed
 ```
 
-### 2. SES Configuration
+### 4. Resend Email Configuration
 
-- **Sandbox Mode**: By default, SES is in sandbox mode. You can only send to verified email addresses.
-- **Production Access**: Request production access through AWS Console to send to any email.
-- Add verification for the `noreply@avamae.org` email address
-
-### 3. Environment Variables for Amplify
-
-The following environment variables are automatically configured by Terraform:
-- `DATABASE_URL`
-- `AWS_S3_BUCKET`
-- `AWS_CLOUDFRONT_DOMAIN`
-- `NEXTAUTH_URL`
-
-You'll need to manually add these in Amplify console:
-- `NEXTAUTH_SECRET` (generate with: `openssl rand -base64 32`)
-- `GOOGLE_CLIENT_ID` (if using Google auth)
-- `GOOGLE_CLIENT_SECRET` (if using Google auth)
+1. Sign up at [Resend.com](https://resend.com)
+2. Add and verify your sending domain (`notify.avamae.org`)
+3. Create API key and add to your build command
+4. No additional AWS configuration needed - Resend handles all email
 
 ## Terraform Commands
 
