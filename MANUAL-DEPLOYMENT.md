@@ -1,5 +1,15 @@
 # Manual AWS Deployment Guide (Without Terraform)
 
+> **⚠️ DEPRECATED**: This guide is for AWS Amplify deployment, which has been replaced with AWS ECS + Fargate.
+> 
+> **For current deployment instructions, see [README.md](./README.md#deployment)**
+> 
+> **Note**: ECS deployment requires Docker and is best managed with Terraform rather than manual setup.
+
+---
+
+**Legacy Documentation Below** (kept for historical reference)
+
 This guide walks you through setting up Avamae on AWS manually using the AWS Console.
 
 **Estimated Time**: 45-60 minutes  

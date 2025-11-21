@@ -1,5 +1,13 @@
 # Deployment Method Comparison
 
+> **⚠️ DEPRECATED**: This guide compares Terraform vs Manual deployment for AWS Amplify, which has been replaced with AWS ECS + Fargate.
+> 
+> **For current deployment instructions, see [README.md](./README.md#deployment)**
+
+---
+
+**Legacy Documentation Below** (kept for historical reference)
+
 Choose the best deployment method for your needs.
 
 ## 🤖 Terraform (Infrastructure as Code)

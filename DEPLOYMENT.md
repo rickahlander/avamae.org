@@ -1,5 +1,13 @@
 # Avamae Production Deployment Guide
 
+> **⚠️ DEPRECATED**: This guide references AWS Amplify, which has been replaced with AWS ECS + Fargate.
+> 
+> **For current deployment instructions, see [README.md](./README.md#deployment)**
+
+---
+
+**Legacy Documentation Below** (kept for historical reference)
+
 This guide walks you through deploying Avamae to AWS using Terraform with cost-optimized settings for low-traffic production.
 
 ## 🎯 Architecture Overview
