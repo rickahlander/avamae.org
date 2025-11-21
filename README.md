@@ -1,6 +1,6 @@
 # Avamae - Honoring Lives, Growing Legacies
 
-A memorial tree platform that celebrates how lives continue to bless others through organ donation, healed relationships, and lasting impact.
+A legacy tree platform that celebrates how lives continue to bless others through organ donation, healed relationships, and lasting impact.
 
 ## Vision
 
@@ -21,44 +21,62 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
 - **Clerk** (Authentication with webhook-based user sync)
 
 ### Infrastructure (AWS)
-- **AWS Amplify** (Hosting with SSR)
+- **AWS ECS with Fargate** (Container orchestration for Next.js SSR)
+- **Application Load Balancer** (ALB with HTTPS/SSL)
+- **Amazon ECR** (Docker container registry)
 - **Amazon RDS** (PostgreSQL database)
 - **Amazon S3** (Media storage with local fallback)
 - **Amazon CloudFront** (CDN)
-- **Amazon SES** (Email service)
+- **Resend** (Transactional email service)
 - **Terraform** (Infrastructure as Code)
 
 ## Features
 
-### Current Implementation (MVP)
-- ✅ User authentication (Clerk with Google OAuth and webhook sync)
-- ✅ PostgreSQL database with Prisma ORM
-- ✅ ACL permission system with superadmin support
-  - **Superadmin**: Users with `is_super_admin` flag can do anything
-  - **Tree-level roles**: OWNER, ADMIN, MODERATOR, CONTRIBUTOR, VIEWER
-  - **Branch-level roles**: BRANCH_ADMIN, BRANCH_EDITOR, BRANCH_VIEWER
-- ✅ Create and manage memorial trees
-- ✅ Add branches (impact events) with hierarchical sub-branches
-- ✅ Interactive tree visualization with top-down layout
-- ✅ Branch editing and deletion with permission checks
-- ✅ Photo support for root person and branches
-- ✅ Flexible storage (local or S3 via environment config)
-- ✅ User profile page
+### Current Implementation
+- ✅ **Authentication & Authorization**
+  - Clerk authentication with Google OAuth and webhook sync
+  - ACL permission system with superadmin support
+  - Tree-level roles: OWNER, ADMIN, MODERATOR, CONTRIBUTOR, VIEWER
+  - Branch-level roles: BRANCH_ADMIN, BRANCH_EDITOR, BRANCH_VIEWER
 
-### Phase 2: Community (Planned)
+- ✅ **Legacy Tree Management**
+  - Create and manage legacy trees (renamed from "memorial trees")
+  - SEO-friendly slug-based URLs (e.g., `/trees/john-smith`)
+  - Add branches (impact events) with hierarchical sub-branches
+  - Interactive tree visualization with top-down layout
+  - Branch editing and deletion with permission checks
+  - URL links for trees and branches (obituaries, charity websites, etc.)
+  - Social media/web links with auto-detected icons
+  - Native share functionality (mobile) and clipboard copy (desktop)
+
+- ✅ **Media Management**
+  - Photo support for root person and branches
+  - Multiple photos per tree/branch
+  - Flexible storage (local base64 or S3 via environment config)
+  - CloudFront CDN integration for production
+
+- ✅ **Story Submission & Moderation**
+  - User-submitted stories with photos and links
+  - Email notifications to tree moderators (via Resend)
+  - Story approval/rejection workflow
+  - Privacy-protected author names for non-moderators
+  - Dedicated story viewing pages
+
+- ✅ **User Interface**
+  - Material-UI v6 (Material Design 3)
+  - Responsive design (mobile, tablet, desktop)
+  - Dark/light theme support
+  - Custom color palette (Warm Gold, Soft Green, Warm Coral)
+  - User profile page
+
+### Planned Features
 - Browse/discover public trees
 - Join requests and approvals
 - Member connections within trees
-- Share stories and memories
 - Donation links
-- Enhanced tree visualization with animations
-
-### Phase 3: Advanced Features (Planned)
 - AI-generated impact summaries
 - Advanced timeline with filters
 - Custom branch types
-- Email notifications
-- Social sharing
 - Impact metrics and statistics
 
 ## Getting Started
@@ -117,6 +135,12 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
    AWS_ACCESS_KEY_ID=your_access_key
    AWS_SECRET_ACCESS_KEY=your_secret_key
    AWS_CLOUDFRONT_DOMAIN=xxx.cloudfront.net
+
+   # Email (Resend)
+   RESEND_API_KEY=re_xxxxx
+
+   # App URL
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
    ```
 
 5. **Set up Clerk**
@@ -166,31 +190,62 @@ avamae.org/
 ├── src/
 │   ├── app/                    # Next.js app router pages
 │   │   ├── (auth)/            # Auth route group
-│   │   ├── (app)/             # App route group (protected)
+│   │   │   ├── sign-in/       # Sign-in page
+│   │   │   └── sign-up/       # Sign-up page
 │   │   ├── api/               # API routes
 │   │   │   ├── trees/         # Tree CRUD operations
 │   │   │   ├── branches/      # Branch CRUD operations
-│   │   │   └── webhooks/      # Clerk webhooks
+│   │   │   ├── stories/       # Story CRUD & approval
+│   │   │   ├── webhooks/      # Clerk webhooks
+│   │   │   ├── upload/        # S3 upload handler
+│   │   │   └── health/        # Health check endpoint
 │   │   ├── create-tree/       # Create tree page
 │   │   ├── trees/             # Tree listing & detail pages
+│   │   │   ├── [id]/          # Tree detail pages
+│   │   │   │   ├── page.tsx   # Tree visualization
+│   │   │   │   ├── view/      # Tree root node detail view
+│   │   │   │   ├── edit-tree/ # Edit tree page
+│   │   │   │   ├── add-branch/# Add branch page
+│   │   │   │   ├── edit-branch/# Edit branch page
+│   │   │   │   └── branches/  # Branch detail views
+│   │   │   └── page.tsx       # Tree listing
+│   │   ├── profile/           # User profile page
+│   │   ├── icon.png           # Favicon
 │   │   ├── layout.tsx         # Root layout with ClerkProvider
 │   │   └── page.tsx           # Homepage
 │   ├── components/            # React components
-│   │   ├── auth/              # Authentication components
+│   │   ├── layout/            # Layout components (Header, Footer)
 │   │   ├── tree/              # Tree visualization
-│   │   ├── branch/            # Branch components
-│   │   ├── story/             # Story/memory components
-│   │   ├── layout/            # Layout components
-│   │   └── ui/                # Reusable UI components
+│   │   ├── stories/           # Story submission & listing
+│   │   └── ShareButton.tsx    # Share functionality component
 │   ├── lib/                   # Utility libraries
+│   │   ├── auth/              # Authentication utilities
 │   │   ├── db/                # Prisma client singleton
+│   │   ├── email/             # Resend email client & templates
+│   │   │   └── templates/     # HTML email templates
+│   │   ├── permissions/       # ACL permission checks
 │   │   └── storage/           # Storage utilities (local/S3)
+│   ├── utils/                 # Utility functions
+│   │   ├── privacy.ts         # Name formatting for privacy
+│   │   ├── slugify.ts         # URL slug generation
+│   │   └── socialIcons.tsx    # Social media icon detection
 │   ├── constants/             # Branch types and constants
 │   ├── styles/                # Theme and global styles
 │   └── types/                 # TypeScript type definitions
 ├── prisma/
-│   └── schema.prisma          # Database schema
-├── terraform/                 # AWS infrastructure
+│   ├── schema.prisma          # Database schema
+│   └── seed.ts                # Seed script for branch types
+├── scripts/
+│   └── fix-tree-slugs.ts      # Utility to fix bad slugs
+├── terraform/                 # AWS infrastructure (ECS, RDS, S3, etc.)
+│   ├── main.tf                # Main Terraform config
+│   ├── modules/               # Terraform modules
+│   │   ├── ecs/               # ECS with Fargate
+│   │   ├── rds/               # RDS PostgreSQL
+│   │   ├── s3/                # S3 bucket
+│   │   └── ecr/               # ECR repository
+│   └── terraform.tfvars       # Variable definitions
+├── Dockerfile                 # Docker configuration for ECS
 ├── middleware.ts              # Clerk authentication middleware
 └── public/                    # Static assets
 ```
@@ -227,47 +282,82 @@ The application supports both local and S3 storage for media files:
 
 ## Deployment
 
-Deploy to AWS with cost-optimized configuration (~$45-70/month for low-traffic production).
+Deploy to AWS with cost-optimized configuration (~$50-80/month for low-traffic production).
 
-### Choose Your Deployment Method
+### Deployment Method: Terraform + Docker
 
-**Option 1: Terraform (Recommended - 25 minutes)**
-```bash
-cd terraform
-terraform init
-terraform apply
-# Configure Amplify environment variables
-git push origin main  # Auto-deploys!
-```
+**Prerequisites:**
+- AWS CLI configured with credentials
+- Docker installed
+- Terraform installed
 
-**Option 2: Manual AWS Console (60 minutes)**
-- Follow step-by-step guide
-- Great for learning AWS services
-- No tools required (just web browser)
+**Deployment Steps:**
 
-**📖 Documentation:**
-- [DEPLOYMENT-COMPARISON.md](./DEPLOYMENT-COMPARISON.md) - Compare both methods
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Terraform deployment (detailed)
-- [MANUAL-DEPLOYMENT.md](./MANUAL-DEPLOYMENT.md) - Manual AWS Console setup
-- [terraform/QUICK-START.md](./terraform/QUICK-START.md) - 5-minute Terraform guide
+1. **Configure Terraform variables**
+   ```bash
+   cd terraform
+   cp terraform.tfvars.example terraform.tfvars
+   # Edit terraform.tfvars with your values
+   ```
+
+2. **Deploy infrastructure**
+   ```bash
+   terraform init
+   terraform apply
+   ```
+
+3. **Build and push Docker image**
+   ```bash
+   # Login to ECR
+   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin <ecr-url>
+   
+   # Build image
+   docker build \
+     --build-arg DATABASE_URL="<rds-url>" \
+     --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="<clerk-key>" \
+     --build-arg CLERK_SECRET_KEY="<clerk-secret>" \
+     --build-arg NEXT_PUBLIC_APP_URL="https://avamae.org" \
+     --build-arg AWS_S3_BUCKET="<bucket-name>" \
+     --build-arg AWS_CLOUDFRONT_DOMAIN="<cloudfront-domain>" \
+     --build-arg STORAGE_TYPE="s3" \
+     --build-arg RESEND_API_KEY="<resend-key>" \
+     -t avamae-app:latest .
+   
+   # Push to ECR
+   docker tag avamae-app:latest <ecr-url>:latest
+   docker push <ecr-url>:latest
+   ```
+
+4. **Deploy to ECS**
+   ```bash
+   aws ecs update-service \
+     --cluster avamae-production \
+     --service avamae-production \
+     --force-new-deployment \
+     --region us-west-2
+   ```
 
 **🏗️ Infrastructure:**
-- AWS Amplify (Next.js SSR with auto-build from GitHub)
+- AWS ECS with Fargate (containerized Next.js SSR)
+- Application Load Balancer with HTTPS/SSL
 - RDS PostgreSQL (db.t4g.micro for cost optimization)
 - S3 + CloudFront (media storage with lifecycle policies)
-- Optional: SES for email
+- Route53 (DNS with custom domain)
+- Resend (transactional email)
 
 ## Database Schema
 
 The application uses a comprehensive PostgreSQL schema including:
 
 - **Users**: Authentication and profiles (synced from Clerk)
-- **Trees**: Memorial trees with privacy settings
-- **TreeMembers**: Membership and roles (Owner, Admin, Contributor, Viewer)
-- **BranchTypes**: Extensible branch type definitions
-- **Branches**: Impact events with hierarchical parent-child relationships
+- **Trees**: Legacy trees with SEO-friendly slugs, privacy settings, and URLs
+- **TreeMedia**: Photos and media for trees (root person)
+- **TreeLink**: Social media and web links for trees (with auto-detected icons)
+- **TreeMembers**: Membership and roles (Owner, Admin, Moderator, Contributor, Viewer)
+- **BranchTypes**: Extensible branch type definitions (seeded via `prisma/seed.ts`)
+- **Branches**: Impact events with hierarchical parent-child relationships and URLs
 - **BranchMedia**: Photos and videos for branches
-- **Stories**: Memories and tributes
+- **Stories**: User-submitted memories and tributes with approval workflow
 - **StoryMedia**: Photos and videos for stories
 - **MemberConnections**: Connections between community members
 - **JoinRequests**: Requests to join trees
@@ -279,19 +369,32 @@ See [prisma/schema.prisma](./prisma/schema.prisma) for full details.
 
 ### Trees
 - `GET /api/trees` - List trees (query param: `view=my-trees` or `view=public`)
-- `POST /api/trees` - Create a new tree
-- `GET /api/trees/[id]` - Get tree details
-- `PUT /api/trees/[id]` - Update tree
+- `POST /api/trees` - Create a new tree (auto-generates unique slug)
+- `GET /api/trees/[id]` - Get tree details (accepts UUID or slug)
+- `PUT /api/trees/[id]` - Update tree (slug remains permanent)
 - `DELETE /api/trees/[id]` - Delete tree (owner only)
 
 ### Branches
-- `POST /api/branches` - Create a new branch
+- `POST /api/branches` - Create a new branch (accepts branch type by name or ID)
 - `GET /api/branches/[id]` - Get branch details
 - `PUT /api/branches/[id]` - Update branch
 - `DELETE /api/branches/[id]` - Delete branch (recursive)
 
+### Stories
+- `POST /api/stories` - Submit a new story (sends email to moderators)
+- `GET /api/stories/[id]` - Get story details
+- `PUT /api/stories/[id]` - Update story (author or admin)
+- `DELETE /api/stories/[id]` - Delete story (author or admin)
+- `GET /api/stories/[id]/approve` - Approve story via email link (moderator)
+- `POST /api/stories/[id]/approve` - Approve story via API (moderator)
+- `GET /api/stories/[id]/reject` - Reject story via email link (moderator)
+- `POST /api/stories/[id]/reject` - Reject story via API (moderator)
+
 ### Webhooks
 - `POST /api/webhooks/clerk` - Clerk user sync webhook
+
+### Health
+- `GET /api/health` - Health check endpoint (for ALB/ECS)
 
 ## Scripts
 
@@ -304,6 +407,7 @@ npm run db:generate  # Generate Prisma client
 npm run db:push      # Push schema to database
 npm run db:migrate   # Run database migrations
 npm run db:studio    # Open Prisma Studio
+npm run db:seed      # Seed database with branch types
 ```
 
 ## Environment Variables
@@ -318,18 +422,29 @@ DATABASE_URL="postgresql://fos_admin:fos_password@localhost:5432/avamae?schema=p
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_..."
 CLERK_SECRET_KEY="sk_..."
 CLERK_WEBHOOK_SECRET="whsec_..."
+NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
+NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
 
 # Storage
 STORAGE_TYPE="local"  # or "s3"
+STORAGE_LOCAL_PATH="./public/uploads"  # for local storage
+
+# Email (Resend)
+RESEND_API_KEY="re_..."
+
+# App URL
+NEXT_PUBLIC_APP_URL="http://localhost:3000"  # or "https://avamae.org" for production
 ```
 
-### Optional (S3 Storage)
+### Optional (S3 Storage for Production)
 
 ```env
-AWS_REGION="us-east-1"
-AWS_S3_BUCKET="avamae-media"
-AWS_ACCESS_KEY_ID="..."
-AWS_SECRET_ACCESS_KEY="..."
+AWS_REGION="us-west-2"
+AWS_S3_BUCKET="avamae-media-prod-us-west-2"
+AWS_ACCESS_KEY_ID="..."  # Optional if using IAM roles (ECS)
+AWS_SECRET_ACCESS_KEY="..."  # Optional if using IAM roles (ECS)
 AWS_CLOUDFRONT_DOMAIN="xxx.cloudfront.net"
 ```
 
