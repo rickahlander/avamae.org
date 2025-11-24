@@ -3,7 +3,7 @@
 import { Box, Typography, Avatar, Chip, Paper, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import { AccountCircle, Add, Edit, Settings, Delete, HelpOutline, CreateOutlined, AutoStories } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, ReactElement } from 'react';
 import { getBranchTypeConfig } from '@/constants/branchTypes';
 import { detectPlatformFromUrl, getDisplayLabelFromUrl } from '@/utils/socialIcons';
 import { useUser } from '@clerk/nextjs';
@@ -402,7 +402,7 @@ export default function TreeVisualization({ tree, canEdit = false }: TreeVisuali
   const drawConnections = () => {
     if (!containerRef.current || !rootCardRef.current) return null;
 
-    const paths: JSX.Element[] = [];
+    const paths: ReactElement[] = [];
     const containerRect = containerRef.current.getBoundingClientRect();
 
     // Build parent-child relationships (branch to sub-branch)
