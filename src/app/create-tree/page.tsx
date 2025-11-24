@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useActionState, useEffect } from 'react';
 import {
   Container,
   Typography,
@@ -14,65 +14,73 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 
+interface FormState {
+  error?: string;
+  success?: boolean;
+  treeId?: string;
+}
+
+async function createTreeAction(
+  prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const rootPersonName = formData.get('rootPersonName') as string;
+  const rootPersonBirthDate = formData.get('rootPersonBirthDate') as string;
+  const rootPersonDeathDate = formData.get('rootPersonDeathDate') as string;
+  const rootPersonStory = formData.get('rootPersonStory') as string;
+
+  // Validation
+  if (!rootPersonName?.trim()) {
+    return { error: 'Please enter a name' };
+  }
+
+  try {
+    const response = await fetch('/api/trees', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        rootPersonName,
+        rootPersonBirthDate: rootPersonBirthDate || undefined,
+        rootPersonDeathDate: rootPersonDeathDate || undefined,
+        rootPersonStory: rootPersonStory || undefined,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json();
+      return { error: data.error || 'Failed to create tree' };
+    }
+
+    const tree = await response.json();
+    return { success: true, treeId: tree.id };
+  } catch (err: any) {
+    return { error: err.message || 'Failed to create tree' };
+  }
+}
+
 export default function CreateTreePage() {
   const router = useRouter();
   const { isLoaded, userId } = useAuth();
-  const [formData, setFormData] = useState({
-    rootPersonName: '',
-    rootPersonBirthDate: '',
-    rootPersonDeathDate: '',
-    rootPersonStory: '',
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [state, formAction, isPending] = useActionState<FormState, FormData>(
+    createTreeAction,
+    {}
+  );
 
-  const handleChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: e.target.value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    // Check authentication
-    if (!isLoaded || !userId) {
-      setError('You must be signed in to create a tree');
+  // Check authentication
+  useEffect(() => {
+    if (isLoaded && !userId) {
       router.push('/sign-in');
-      return;
     }
+  }, [isLoaded, userId, router]);
 
-    // Validation
-    if (!formData.rootPersonName.trim()) {
-      setError('Please enter a name');
-      return;
+  // Redirect on success
+  useEffect(() => {
+    if (state.success && state.treeId) {
+      router.push(`/trees/${state.treeId}`);
     }
-
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/trees', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create tree');
-      }
-
-      const tree = await response.json();
-      router.push(`/trees/${tree.id}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create tree');
-      setLoading(false);
-    }
-  };
+  }, [state.success, state.treeId, router]);
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
@@ -86,53 +94,53 @@ export default function CreateTreePage() {
       </Box>
 
       <Paper elevation={2} sx={{ p: 4 }}>
-        <form onSubmit={handleSubmit}>
+        <form action={formAction}>
           <Stack spacing={3}>
-            {error && (
-              <Alert severity="error" onClose={() => setError('')}>
-                {error}
+            {state.error && (
+              <Alert severity="error">
+                {state.error}
               </Alert>
             )}
 
             <TextField
+              name="rootPersonName"
               label="Name"
               required
               fullWidth
-              value={formData.rootPersonName}
-              onChange={handleChange('rootPersonName')}
+              disabled={isPending}
               helperText="The name of your loved one"
               variant="outlined"
             />
 
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
+                name="rootPersonBirthDate"
                 label="Date of Birth"
                 type="date"
                 fullWidth
-                value={formData.rootPersonBirthDate}
-                onChange={handleChange('rootPersonBirthDate')}
+                disabled={isPending}
                 InputLabelProps={{ shrink: true }}
                 variant="outlined"
               />
 
               <TextField
+                name="rootPersonDeathDate"
                 label="Date of Passing"
                 type="date"
                 fullWidth
-                value={formData.rootPersonDeathDate}
-                onChange={handleChange('rootPersonDeathDate')}
+                disabled={isPending}
                 InputLabelProps={{ shrink: true }}
                 variant="outlined"
               />
             </Box>
 
             <TextField
+              name="rootPersonStory"
               label="Their Story"
               multiline
               rows={6}
               fullWidth
-              value={formData.rootPersonStory}
-              onChange={handleChange('rootPersonStory')}
+              disabled={isPending}
               helperText="Share what made them special, their passions, personality, and the impact they had"
               variant="outlined"
             />
@@ -142,7 +150,7 @@ export default function CreateTreePage() {
                 variant="outlined"
                 size="large"
                 onClick={() => router.push('/')}
-                disabled={loading}
+                disabled={isPending}
               >
                 Cancel
               </Button>
@@ -151,9 +159,9 @@ export default function CreateTreePage() {
                 variant="contained"
                 size="large"
                 color="primary"
-                disabled={loading}
+                disabled={isPending}
               >
-                {loading ? 'Creating...' : 'Create Legacy Tree'}
+                {isPending ? 'Creating...' : 'Create Legacy Tree'}
               </Button>
             </Box>
           </Stack>

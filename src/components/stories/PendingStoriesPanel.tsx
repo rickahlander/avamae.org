@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useOptimistic } from 'react';
 import {
   Box,
   Card,
@@ -52,6 +52,13 @@ export default function PendingStoriesPanel({ stories, onApprove, onReject }: Pe
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
 
+  // React 19: Optimistic UI for instant feedback
+  const [optimisticStories, removeOptimisticStory] = useOptimistic(
+    stories,
+    (currentStories, removedStoryId: string) =>
+      currentStories.filter((story) => story.id !== removedStoryId)
+  );
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -64,6 +71,10 @@ export default function PendingStoriesPanel({ stories, onApprove, onReject }: Pe
   const handleApprove = async (storyId: string) => {
     setError('');
     setLoading(storyId);
+    
+    // Optimistically remove from UI immediately
+    removeOptimisticStory(storyId);
+    
     try {
       await onApprove(storyId);
     } catch (err) {
@@ -83,6 +94,10 @@ export default function PendingStoriesPanel({ stories, onApprove, onReject }: Pe
 
     setError('');
     setLoading(selectedStoryId);
+    
+    // Optimistically remove from UI immediately
+    removeOptimisticStory(selectedStoryId);
+    
     try {
       await onReject(selectedStoryId, rejectionReason.trim() || undefined);
       setRejectDialogOpen(false);
@@ -95,7 +110,7 @@ export default function PendingStoriesPanel({ stories, onApprove, onReject }: Pe
     }
   };
 
-  const pendingStories = stories.filter((story) => !story.approved);
+  const pendingStories = optimisticStories.filter((story) => !story.approved);
 
   if (pendingStories.length === 0) {
     return (
