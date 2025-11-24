@@ -140,7 +140,7 @@ export default function BranchViewPage() {
 
       <Grid container spacing={3}>
         {/* Main Content */}
-        <Grid item xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper sx={{ p: 3, mb: 3 }}>
             {/* Branch Type */}
             <Box sx={{ mb: 3 }}>
@@ -239,7 +239,7 @@ export default function BranchViewPage() {
         </Grid>
 
         {/* Sidebar */}
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" gutterBottom fontWeight={600}>
               Details

@@ -152,7 +152,7 @@ export default function TreesPage() {
 
           <Grid container spacing={3}>
             {trees.map((tree) => (
-              <Grid item xs={12} sm={6} md={4} key={tree.id}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={tree.id}>
                 <Card
                   elevation={2}
                   sx={{
