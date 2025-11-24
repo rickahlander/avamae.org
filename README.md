@@ -10,8 +10,8 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
 
 ### Frontend
 - **Next.js 15** (App Router with React Server Components)
-- **React 18**
-- **Material-UI v6** (Material Design 3)
+- **React 19** (with `useActionState` and `useOptimistic` hooks)
+- **Material-UI v7** (Material Design 3)
 - **TypeScript** (strict mode)
 
 ### Backend
@@ -63,7 +63,7 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
   - Dedicated story viewing pages
 
 - ✅ **User Interface**
-  - Material-UI v6 (Material Design 3)
+  - Material-UI v7 (Material Design 3)
   - Responsive design (mobile, tablet, desktop)
   - Dark/light theme support
   - Custom color palette (Warm Gold, Soft Green, Warm Coral)
