@@ -30,15 +30,16 @@ resource "aws_security_group" "rds" {
   description = "Security group for RDS PostgreSQL"
 
   ingress {
-    description = "PostgreSQL from whitelisted IPs"
+    description = "PostgreSQL from home IP"
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
     cidr_blocks = [
-      "97.120.162.129/32",  # Your office/home IP
-      "44.224.0.0/11",      # AWS us-west-2 services (includes Amplify)
+      "97.120.162.129/32",  # Your home IP
     ]
   }
+  
+  # Note: ECS access is added via aws_security_group_rule in the ECS module
 
   egress {
     from_port   = 0
