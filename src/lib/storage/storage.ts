@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
 
-export type StorageType = 'local' | 's3' | 'vercel-blob';
+export type StorageType = 'local' | 'vercel-blob';
 
 export interface UploadResult {
   url: string;
@@ -11,7 +11,7 @@ export interface UploadResult {
 
 /**
  * Upload a file to storage based on environment configuration
- * Supports: local filesystem, AWS S3, or Vercel Blob
+ * Supports: local filesystem or Vercel Blob
  */
 export async function uploadFile(
   file: File,
@@ -19,13 +19,10 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const storageType = (process.env.STORAGE_TYPE || 'local') as StorageType;
 
-  switch (storageType) {
-    case 'vercel-blob':
-      return uploadToVercelBlob(file, folder);
-    case 's3':
-      return uploadToS3(file, folder);
-    default:
-      return uploadToLocal(file, folder);
+  if (storageType === 'vercel-blob') {
+    return uploadToVercelBlob(file, folder);
+  } else {
+    return uploadToLocal(file, folder);
   }
 }
 
@@ -57,7 +54,7 @@ async function uploadToVercelBlob(
 }
 
 /**
- * Upload file to local storage
+ * Upload file to local storage (development only)
  */
 async function uploadToLocal(
   file: File,
@@ -94,79 +91,15 @@ async function uploadToLocal(
 }
 
 /**
- * Upload file to AWS S3 (legacy support)
- */
-async function uploadToS3(
-  file: File,
-  folder: string
-): Promise<UploadResult> {
-  // Import S3 client only when needed
-  const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-
-  // Configure S3 client
-  const s3Config: Record<string, unknown> = {
-    region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
-  };
-
-  // Only add explicit credentials if they're provided
-  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
-    s3Config.credentials = {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    };
-  }
-
-  const s3Client = new S3Client(s3Config);
-
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  // Generate unique filename
-  const timestamp = Date.now();
-  const randomString = Math.random().toString(36).substring(7);
-  const extension = path.extname(file.name);
-  const filename = `${timestamp}-${randomString}${extension}`;
-  const key = `${folder}/${filename}`;
-
-  // Upload to S3
-  const bucketName = process.env.S3_BUCKET || process.env.AWS_S3_BUCKET;
-  const command = new PutObjectCommand({
-    Bucket: bucketName,
-    Key: key,
-    Body: buffer,
-    ContentType: file.type,
-  });
-
-  await s3Client.send(command);
-
-  // Return CloudFront URL if available, otherwise S3 URL
-  const cloudFrontDomain = process.env.CLOUDFRONT_DOMAIN || process.env.AWS_CLOUDFRONT_DOMAIN;
-  const region = process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1';
-  const url = cloudFrontDomain
-    ? `https://${cloudFrontDomain}/${key}`
-    : `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-
-  return {
-    url,
-    key,
-  };
-}
-
-/**
  * Delete a file from storage
  */
 export async function deleteFile(key: string): Promise<void> {
   const storageType = (process.env.STORAGE_TYPE || 'local') as StorageType;
 
-  switch (storageType) {
-    case 'vercel-blob':
-      await deleteFromVercelBlob(key);
-      break;
-    case 's3':
-      await deleteFromS3(key);
-      break;
-    default:
-      await deleteFromLocal(key);
+  if (storageType === 'vercel-blob') {
+    await deleteFromVercelBlob(key);
+  } else {
+    await deleteFromLocal(key);
   }
 }
 
@@ -183,28 +116,4 @@ async function deleteFromLocal(key: string): Promise<void> {
   if (existsSync(filePath)) {
     await unlink(filePath);
   }
-}
-
-async function deleteFromS3(key: string): Promise<void> {
-  const { S3Client, DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-
-  const s3Config: Record<string, unknown> = {
-    region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
-  };
-
-  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
-    s3Config.credentials = {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    };
-  }
-
-  const s3Client = new S3Client(s3Config);
-
-  const command = new DeleteObjectCommand({
-    Bucket: process.env.S3_BUCKET || process.env.AWS_S3_BUCKET,
-    Key: key,
-  });
-
-  await s3Client.send(command);
 }
