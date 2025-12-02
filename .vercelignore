@@ -15,3 +15,6 @@ public/uploads/
 Dockerfile
 docker-compose*.yml
 
+# Ignore build cache (recreated during build)
+.next/
+
