@@ -1,0 +1,17 @@
+# Ignore Terraform (legacy AWS infrastructure)
+terraform/
+.terraform/
+
+# Ignore local uploads (use Vercel Blob in production)
+public/uploads/
+
+# Ignore development files
+*.md
+!README.md
+.env*
+.claude/
+
+# Ignore Docker files (legacy)
+Dockerfile
+docker-compose*.yml
+
