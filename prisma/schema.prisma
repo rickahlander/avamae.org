@@ -2,7 +2,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
+  // Note: Vercel uses native binaries, RHEL targets were for Docker/ECS
 }
 
 datasource db {

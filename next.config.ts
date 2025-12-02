@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**.cloudfront.net",
       },
+      {
+        protocol: "https",
+        hostname: "**.public.blob.vercel-storage.com",
+      },
     ],
   },
   experimental: {
@@ -18,8 +22,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
-  // Standalone output for Docker deployment (App Runner)
-  output: "standalone",
+  // Note: Removed "output: standalone" - not needed for Vercel deployment
 };
 
 export default nextConfig;

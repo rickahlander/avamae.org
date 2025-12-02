@@ -1,13 +1,35 @@
 # Avamae Infrastructure (Terraform)
 
+> ⚠️ **DEPRECATED**: This project has migrated to Vercel.
+> 
+> The Terraform/AWS infrastructure is no longer in use. See [VERCEL-SETUP.md](../VERCEL-SETUP.md) for current deployment instructions.
+>
+> This directory is kept for historical reference only.
+
+---
+
+**Legacy Documentation Below**
+
 This directory contains the Terraform configuration for deploying the Avamae platform to AWS.
 
 ## Prerequisites
 
 1. **Terraform** installed (>= 1.0)
-2. **AWS CLI** configured with appropriate credentials
+2. **AWS CLI** configured with the `ahltrade` profile
 3. **AWS Account** with necessary permissions
 4. **Docker** installed (for building container images)
+
+## ⚠️ IMPORTANT: AWS Profile
+
+**ALWAYS use the `ahltrade` AWS profile for this project.**
+
+```bash
+# Set environment variable before running Terraform
+export AWS_PROFILE=ahltrade
+
+# Or use --profile flag for AWS CLI commands
+aws --profile ahltrade <command>
+```
 
 ## Infrastructure Components
 
@@ -38,10 +60,10 @@ Uncomment the backend configuration in `main.tf` and create an S3 bucket for sta
 
 ```bash
 # Create S3 bucket for Terraform state
-aws s3 mb s3://avamae-terraform-state --region us-east-1
+aws --profile ahltrade s3 mb s3://avamae-terraform-state --region us-east-1
 
 # Enable versioning
-aws s3api put-bucket-versioning \
+aws --profile ahltrade s3api put-bucket-versioning \
   --bucket avamae-terraform-state \
   --versioning-configuration Status=Enabled
 ```
@@ -50,18 +72,21 @@ aws s3api put-bucket-versioning \
 
 ```bash
 cd terraform
+export AWS_PROFILE=ahltrade
 terraform init
 ```
 
 ### 4. Review Plan
 
 ```bash
+export AWS_PROFILE=ahltrade
 terraform plan
 ```
 
 ### 5. Apply Configuration
 
 ```bash
+export AWS_PROFILE=ahltrade
 terraform apply
 ```
 
@@ -80,8 +105,8 @@ If you're using an external DNS provider, configure your domain to point to:
 ### 1. Build and Push Docker Image
 
 ```bash
-# Login to ECR
-aws ecr get-login-password --region us-west-2 --profile <your-profile> | \
+# Login to ECR (always use ahltrade profile)
+aws ecr get-login-password --region us-west-2 --profile ahltrade | \
   docker login --username AWS --password-stdin $(terraform output -raw ecr_repository_url | cut -d'/' -f1)
 
 # Build image with production environment variables
@@ -104,8 +129,8 @@ docker push $(terraform output -raw ecr_repository_url):latest
 ### 2. Deploy to ECS
 
 ```bash
-# Force new deployment to pick up the Docker image
-aws ecs update-service \
+# Force new deployment to pick up the Docker image (always use ahltrade profile)
+aws --profile ahltrade ecs update-service \
   --cluster avamae-production \
   --service avamae-production \
   --force-new-deployment \

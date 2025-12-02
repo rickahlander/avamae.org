@@ -20,15 +20,12 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
 - **PostgreSQL** (local development & AWS RDS for production)
 - **Clerk** (Authentication with webhook-based user sync)
 
-### Infrastructure (AWS)
-- **AWS ECS with Fargate** (Container orchestration for Next.js SSR)
-- **Application Load Balancer** (ALB with HTTPS/SSL)
-- **Amazon ECR** (Docker container registry)
-- **Amazon RDS** (PostgreSQL database)
-- **Amazon S3** (Media storage with local fallback)
-- **Amazon CloudFront** (CDN)
+### Infrastructure (Vercel + Supabase)
+- **Vercel** (Next.js hosting with edge functions)
+- **Supabase** (PostgreSQL database)
+- **Vercel Blob** (Media storage)
+- **Clerk** (Authentication)
 - **Resend** (Transactional email service)
-- **Terraform** (Infrastructure as Code)
 
 ## Features
 
@@ -237,15 +234,8 @@ avamae.org/
 │   └── seed.ts                # Seed script for branch types
 ├── scripts/
 │   └── fix-tree-slugs.ts      # Utility to fix bad slugs
-├── terraform/                 # AWS infrastructure (ECS, RDS, S3, etc.)
-│   ├── main.tf                # Main Terraform config
-│   ├── modules/               # Terraform modules
-│   │   ├── ecs/               # ECS with Fargate
-│   │   ├── rds/               # RDS PostgreSQL
-│   │   ├── s3/                # S3 bucket
-│   │   └── ecr/               # ECR repository
-│   └── terraform.tfvars       # Variable definitions
-├── Dockerfile                 # Docker configuration for ECS
+├── terraform/                 # Legacy AWS infrastructure (deprecated)
+├── Dockerfile                 # Legacy Docker config (deprecated)
 ├── middleware.ts              # Clerk authentication middleware
 └── public/                    # Static assets
 ```
@@ -282,67 +272,59 @@ The application supports both local and S3 storage for media files:
 
 ## Deployment
 
-Deploy to AWS with cost-optimized configuration (~$50-80/month for low-traffic production).
+Deploy to Vercel for simple, cost-effective hosting (~$0/month on Hobby tier).
 
-### Deployment Method: Terraform + Docker
+### Deployment Method: Vercel
 
 **Prerequisites:**
-- AWS CLI configured with credentials
-- Docker installed
-- Terraform installed
+- Vercel account (Hobby or Pro)
+- GitHub repository
 
 **Deployment Steps:**
 
-1. **Configure Terraform variables**
-   ```bash
-   cd terraform
-   cp terraform.tfvars.example terraform.tfvars
-   # Edit terraform.tfvars with your values
+1. **Connect to Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Vercel auto-detects Next.js
+
+2. **Database (Supabase)**
+   - Already configured with Supabase PostgreSQL
+   - Use `POSTGRES_PRISMA_URL` as your `DATABASE_URL`
+
+3. **Set up Vercel Blob**
+   - In Vercel Dashboard → Storage → Create Database → Blob
+   - Connect it to your project
+
+4. **Configure Environment Variables**
+   ```
+   DATABASE_URL=${POSTGRES_PRISMA_URL}
+   STORAGE_TYPE=vercel-blob
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+   CLERK_SECRET_KEY=sk_...
+   CLERK_WEBHOOK_SECRET=whsec_...
+   RESEND_API_KEY=re_...
+   NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
    ```
 
-2. **Deploy infrastructure**
+5. **Deploy**
    ```bash
-   terraform init
-   terraform apply
+   git push origin main
    ```
 
-3. **Build and push Docker image**
+6. **Run Database Migration**
    ```bash
-   # Login to ECR
-   aws ecr get-login-password --region us-west-2 | docker login --username AWS --password-stdin <ecr-url>
-   
-   # Build image
-   docker build \
-     --build-arg DATABASE_URL="<rds-url>" \
-     --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="<clerk-key>" \
-     --build-arg CLERK_SECRET_KEY="<clerk-secret>" \
-     --build-arg NEXT_PUBLIC_APP_URL="https://avamae.org" \
-     --build-arg AWS_S3_BUCKET="<bucket-name>" \
-     --build-arg AWS_CLOUDFRONT_DOMAIN="<cloudfront-domain>" \
-     --build-arg STORAGE_TYPE="s3" \
-     --build-arg RESEND_API_KEY="<resend-key>" \
-     -t avamae-app:latest .
-   
-   # Push to ECR
-   docker tag avamae-app:latest <ecr-url>:latest
-   docker push <ecr-url>:latest
+   npx vercel env pull .env.local
+   npx prisma db push
+   npm run db:seed
    ```
 
-4. **Deploy to ECS**
-   ```bash
-   aws ecs update-service \
-     --cluster avamae-production \
-     --service avamae-production \
-     --force-new-deployment \
-     --region us-west-2
-   ```
+**See [VERCEL-SETUP.md](./VERCEL-SETUP.md) for complete setup instructions.**
 
 **🏗️ Infrastructure:**
-- AWS ECS with Fargate (containerized Next.js SSR)
-- Application Load Balancer with HTTPS/SSL
-- RDS PostgreSQL (db.t4g.micro for cost optimization)
-- S3 + CloudFront (media storage with lifecycle policies)
-- Route53 (DNS with custom domain)
+- Vercel (Next.js hosting with edge functions)
+- Vercel Postgres (managed PostgreSQL)
+- Vercel Blob (media storage)
+- Clerk (authentication)
 - Resend (transactional email)
 
 ## Database Schema
@@ -438,14 +420,18 @@ RESEND_API_KEY="re_..."
 NEXT_PUBLIC_APP_URL="http://localhost:3000"  # or "https://avamae.org" for production
 ```
 
-### Optional (S3 Storage for Production)
+### Vercel Production (auto-configured when connecting Vercel storage)
 
 ```env
-AWS_REGION="us-west-2"
-AWS_S3_BUCKET="avamae-media-prod-us-west-2"
-AWS_ACCESS_KEY_ID="..."  # Optional if using IAM roles (ECS)
-AWS_SECRET_ACCESS_KEY="..."  # Optional if using IAM roles (ECS)
-AWS_CLOUDFRONT_DOMAIN="xxx.cloudfront.net"
+# Vercel Postgres (auto-added)
+POSTGRES_URL="postgres://..."
+POSTGRES_PRISMA_URL="postgres://...?pgbouncer=true"
+
+# Vercel Blob (auto-added)
+BLOB_READ_WRITE_TOKEN="vercel_blob_..."
+
+# Storage type (add manually)
+STORAGE_TYPE="vercel-blob"
 ```
 
 ## Branch Types

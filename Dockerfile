@@ -1,3 +1,9 @@
+# ============================================================================
+# DEPRECATED: This Dockerfile was used for AWS ECS deployment.
+# The project has migrated to Vercel and no longer requires Docker.
+# Kept for reference only.
+# ============================================================================
+
 # Stage 1: Dependencies
 FROM node:20-alpine AS deps
 RUN apk add --no-cache libc6-compat openssl

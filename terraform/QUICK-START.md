@@ -1,11 +1,20 @@
 # Quick Start Deployment
 
+> ⚠️ **DEPRECATED**: This project has migrated to Vercel. See [VERCEL-SETUP.md](../VERCEL-SETUP.md) for current deployment instructions.
+
+---
+
 ## ⚡ 5-Minute Setup
 
 ### 1. Prerequisites
-- AWS CLI configured
+- AWS CLI configured with `ahltrade` profile
 - Terraform installed
 - GitHub token ready
+
+**⚠️ IMPORTANT: Always use the `ahltrade` AWS profile:**
+```bash
+export AWS_PROFILE=ahltrade
+```
 
 ### 2. Configure Variables
 
@@ -20,6 +29,7 @@ github_token   = "ghp_YOUR_TOKEN"
 
 ```bash
 cd terraform
+export AWS_PROFILE=ahltrade
 terraform init
 terraform apply  # Type 'yes'
 ```

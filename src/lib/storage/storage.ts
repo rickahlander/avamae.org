@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { existsSync } from 'fs';
 
-export type StorageType = 'local' | 's3';
+export type StorageType = 'local' | 's3' | 'vercel-blob';
 
 export interface UploadResult {
   url: string;
@@ -10,7 +10,8 @@ export interface UploadResult {
 }
 
 /**
- * Upload a file to either local storage or S3 based on environment configuration
+ * Upload a file to storage based on environment configuration
+ * Supports: local filesystem, AWS S3, or Vercel Blob
  */
 export async function uploadFile(
   file: File,
@@ -18,11 +19,41 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const storageType = (process.env.STORAGE_TYPE || 'local') as StorageType;
 
-  if (storageType === 's3') {
-    return uploadToS3(file, folder);
-  } else {
-    return uploadToLocal(file, folder);
+  switch (storageType) {
+    case 'vercel-blob':
+      return uploadToVercelBlob(file, folder);
+    case 's3':
+      return uploadToS3(file, folder);
+    default:
+      return uploadToLocal(file, folder);
   }
+}
+
+/**
+ * Upload file to Vercel Blob storage
+ */
+async function uploadToVercelBlob(
+  file: File,
+  folder: string
+): Promise<UploadResult> {
+  const { put } = await import('@vercel/blob');
+
+  // Generate unique filename
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(7);
+  const extension = path.extname(file.name);
+  const filename = `${folder}/${timestamp}-${randomString}${extension}`;
+
+  // Upload to Vercel Blob
+  const blob = await put(filename, file, {
+    access: 'public',
+    addRandomSuffix: false,
+  });
+
+  return {
+    url: blob.url,
+    key: filename,
+  };
 }
 
 /**
@@ -63,7 +94,7 @@ async function uploadToLocal(
 }
 
 /**
- * Upload file to AWS S3
+ * Upload file to AWS S3 (legacy support)
  */
 async function uploadToS3(
   file: File,
@@ -72,13 +103,12 @@ async function uploadToS3(
   // Import S3 client only when needed
   const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
 
-  // Configure S3 client - use IAM role credentials in ECS, explicit credentials elsewhere
-  const s3Config: any = {
+  // Configure S3 client
+  const s3Config: Record<string, unknown> = {
     region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
   };
 
-  // Only add explicit credentials if they're provided (for local dev)
-  // In ECS, the SDK will automatically use the IAM task role
+  // Only add explicit credentials if they're provided
   if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
     s3Config.credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -128,11 +158,21 @@ async function uploadToS3(
 export async function deleteFile(key: string): Promise<void> {
   const storageType = (process.env.STORAGE_TYPE || 'local') as StorageType;
 
-  if (storageType === 's3') {
-    await deleteFromS3(key);
-  } else {
-    await deleteFromLocal(key);
+  switch (storageType) {
+    case 'vercel-blob':
+      await deleteFromVercelBlob(key);
+      break;
+    case 's3':
+      await deleteFromS3(key);
+      break;
+    default:
+      await deleteFromLocal(key);
   }
+}
+
+async function deleteFromVercelBlob(url: string): Promise<void> {
+  const { del } = await import('@vercel/blob');
+  await del(url);
 }
 
 async function deleteFromLocal(key: string): Promise<void> {
@@ -148,13 +188,10 @@ async function deleteFromLocal(key: string): Promise<void> {
 async function deleteFromS3(key: string): Promise<void> {
   const { S3Client, DeleteObjectCommand } = await import('@aws-sdk/client-s3');
 
-  // Configure S3 client - use IAM role credentials in ECS, explicit credentials elsewhere
-  const s3Config: any = {
+  const s3Config: Record<string, unknown> = {
     region: process.env.STORAGE_REGION || process.env.AWS_REGION || 'us-east-1',
   };
 
-  // Only add explicit credentials if they're provided (for local dev)
-  // In ECS, the SDK will automatically use the IAM task role
   if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
     s3Config.credentials = {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -171,4 +208,3 @@ async function deleteFromS3(key: string): Promise<void> {
 
   await s3Client.send(command);
 }
-

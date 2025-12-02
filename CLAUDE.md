@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Avamae Platform
 
-> **Last Updated**: November 17, 2025
+> **Last Updated**: December 2, 2025
 > **Project**: Avamae Memorial Tree Platform
 > **Purpose**: Comprehensive guide for AI assistants to understand and contribute to this codebase effectively
 
@@ -66,19 +66,18 @@ Avamae is a **memorial tree platform** that honors lost loved ones by visualizin
 ### Backend
 
 - **API**: Next.js API Routes (server-side)
-- **Database**: PostgreSQL (AWS RDS for production)
+- **Database**: PostgreSQL (Supabase)
 - **ORM**: Prisma (v6.1.0)
-- **Authentication**: NextAuth.js v4 (JWT strategy)
-- **Password Hashing**: bcrypt
+- **Authentication**: Clerk
+- **Email**: Resend
 
-### Infrastructure (AWS)
+### Infrastructure (Vercel + Supabase)
 
-- **Hosting**: AWS Amplify (SSR support)
-- **Database**: Amazon RDS PostgreSQL (Multi-AZ in production)
-- **Storage**: Amazon S3 (media files)
-- **CDN**: Amazon CloudFront
-- **Email**: Amazon SES
-- **IaC**: Terraform (declarative infrastructure)
+- **Hosting**: Vercel (Next.js optimized hosting)
+- **Database**: Supabase PostgreSQL (`sfbmnaalmfzoxqxejfgo`)
+- **Storage**: Vercel Blob (media files)
+- **Email**: Resend (transactional email)
+- **Vercel Project ID**: `prj_xtiKlAuT5km3KcdnDPBef28roS5n`
 
 ### Key Dependencies
 
@@ -574,48 +573,71 @@ export default function MyForm() {
 
 ## Deployment & Infrastructure
 
-### AWS Infrastructure
+### Vercel Deployment
 
-Managed via Terraform in `terraform/` directory.
+**Project ID**: `prj_xtiKlAuT5km3KcdnDPBef28roS5n`
+
+The project is deployed on Vercel with automatic deployments from the `main` branch.
 
 **Resources**:
-- AWS Amplify (hosting)
-- RDS PostgreSQL (database)
-- S3 (media storage)
-- CloudFront (CDN)
-- SES (email)
+- Vercel (Next.js hosting)
+- Vercel Postgres (database)
+- Vercel Blob (media storage)
+- Clerk (authentication)
+- Resend (email)
 
-**Deployment Steps** (see `terraform/README.md`):
-1. Configure `terraform.tfvars`
-2. Run `terraform init`
-3. Run `terraform plan`
-4. Run `terraform apply`
-5. Configure Amplify environment variables
-6. Push to GitHub to trigger deployment
+**Deployment Steps** (see `VERCEL-SETUP.md`):
+1. Push to GitHub: `git push origin main`
+2. Vercel automatically builds and deploys
+3. For database migrations: `npx vercel env pull && npx prisma db push`
 
 ### Environment Variables in Production
 
-Set in AWS Amplify console:
-- `DATABASE_URL` (RDS connection string)
-- `NEXTAUTH_URL` (production domain)
-- `NEXTAUTH_SECRET` (generated secret)
-- AWS credentials (via IAM if using roles)
+Set in Vercel Dashboard → Settings → Environment Variables:
+- `DATABASE_URL` (use `${POSTGRES_PRISMA_URL}`)
+- `STORAGE_TYPE` (set to `vercel-blob`)
+- `BLOB_READ_WRITE_TOKEN` (auto-added when connecting Vercel Blob)
+- Clerk keys (`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, etc.)
+- `RESEND_API_KEY`
+- `NEXT_PUBLIC_APP_URL`
 
 ### Build Process
 
 ```bash
 npm run build  # Creates optimized production build
-npm run start  # Runs production server
+npm run start  # Runs production server (local only)
 ```
 
-Next.js generates:
-- Static pages (SSG)
-- Server-rendered pages (SSR)
-- API routes (serverless functions)
+Vercel handles:
+- Automatic builds on push
+- Edge functions for API routes
+- Static page generation
+- Image optimization
 
 ---
 
 ## AI Assistant Best Practices
+
+### Vercel Deployment Info
+
+**Project ID**: `prj_xtiKlAuT5km3KcdnDPBef28roS5n`
+
+This project is deployed on Vercel with:
+- **Vercel Postgres** for database
+- **Vercel Blob** for media storage
+- **Clerk** for authentication
+- **Resend** for email
+
+```bash
+# Deploy to Vercel
+git push origin main  # Auto-deploys
+
+# Pull environment variables locally
+npx vercel env pull .env.local
+
+# Run database migrations
+npx prisma db push
+```
 
 ### When Working on This Codebase
 
@@ -640,6 +662,7 @@ Next.js generates:
 - ❌ Don't modify migrations once created; create new ones
 - ❌ Don't use `any` type; define proper interfaces
 - ❌ Don't forget `'use client'` for components with interactivity
+- ❌ Don't use local file storage in production; use `STORAGE_TYPE=vercel-blob`
 
 ### Recommended Workflow
 
