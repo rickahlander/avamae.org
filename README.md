@@ -17,7 +17,7 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
 ### Backend
 - **Next.js API Routes**
 - **Prisma ORM** v6.1.0
-- **PostgreSQL** (local development & AWS RDS for production)
+- **PostgreSQL** (Supabase for production)
 - **Clerk** (Authentication with webhook-based user sync)
 
 ### Infrastructure (Vercel + Supabase)
@@ -49,8 +49,8 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
 - ✅ **Media Management**
   - Photo support for root person and branches
   - Multiple photos per tree/branch
-  - Flexible storage (local base64 or S3 via environment config)
-  - CloudFront CDN integration for production
+  - Vercel Blob storage for production
+  - Local storage option for development
 
 - ✅ **Story Submission & Moderation**
   - User-submitted stories with photos and links

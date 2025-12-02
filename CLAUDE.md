@@ -56,9 +56,9 @@ Avamae is a **memorial tree platform** that honors lost loved ones by visualizin
 
 ### Frontend
 
-- **Framework**: Next.js 15 (App Router with React Server Components)
-- **React**: 18.3.1
-- **UI Library**: Material-UI (MUI) v6 (Material Design 3)
+- **Framework**: Next.js 15.5 (App Router with React Server Components)
+- **React**: 19.2
+- **UI Library**: Material-UI (MUI) v7 (Material Design 3)
 - **Styling**: Emotion (CSS-in-JS via MUI)
 - **Language**: TypeScript (strict mode enabled)
 - **Fonts**: Playfair Display (headers), Inter (body)
@@ -83,13 +83,13 @@ Avamae is a **memorial tree platform** that honors lost loved ones by visualizin
 
 ```json
 {
-  "@mui/material": "^6.1.7",
+  "@clerk/nextjs": "^6.35.4",
+  "@mui/material": "^7.3.5",
   "@prisma/client": "^6.1.0",
-  "next": "15.0.3",
-  "next-auth": "^4.24.11",
-  "react": "^18.3.1",
-  "bcrypt": "^5.1.1",
-  "zod": "^3.24.1"
+  "@vercel/blob": "^0.27.1",
+  "next": "^15.5.6",
+  "react": "^19.2.0",
+  "resend": "^6.5.2"
 }
 ```
 
@@ -128,10 +128,6 @@ avamae.org/
 │   │   └── theme.ts           # MUI theme configuration
 │   └── types/                 # TypeScript type definitions
 │       └── next-auth.d.ts     # NextAuth type extensions
-├── terraform/                  # AWS infrastructure as code
-│   ├── modules/               # Reusable Terraform modules
-│   ├── main.tf                # Main Terraform configuration
-│   └── README.md              # Infrastructure documentation
 ├── .env.example               # Environment variables template
 ├── .gitignore                 # Git ignore rules
 ├── DESIGN.md                  # Detailed design documentation
@@ -205,24 +201,27 @@ avamae.org/
 ### Environment Variables (Required)
 
 ```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/avamae?schema=public"
+# Database (Supabase)
+DATABASE_URL="postgres://..."
 
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
+# Clerk Authentication
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_..."
+CLERK_SECRET_KEY="sk_..."
+CLERK_WEBHOOK_SECRET="whsec_..."
+NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
+NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/trees"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/trees"
 
-# AWS (Production Only)
-AWS_REGION="us-east-1"
-AWS_S3_BUCKET="avamae-media"
-AWS_CLOUDFRONT_DOMAIN="xxx.cloudfront.net"
+# Storage (Vercel Blob)
+STORAGE_TYPE="vercel-blob"
+BLOB_READ_WRITE_TOKEN="vercel_blob_..."
 
-# Email
-EMAIL_FROM="noreply@avamae.org"
+# Email (Resend)
+RESEND_API_KEY="re_..."
 
-# OAuth (Optional)
-GOOGLE_CLIENT_ID="..."
-GOOGLE_CLIENT_SECRET="..."
+# App URL
+NEXT_PUBLIC_APP_URL="https://avamae.org"
 ```
 
 ---
@@ -364,41 +363,37 @@ Indexes are defined in schema for:
 
 ## Authentication & Security
 
-### NextAuth.js Configuration
+### Clerk Configuration
 
-- **Location**: `src/lib/auth/auth-options.ts`
-- **Strategy**: JWT (not database sessions)
-- **Providers**:
-  - Credentials (email/password with bcrypt)
-  - Google OAuth (optional)
-- **Pages**: Custom sign-in at `/login`
+- **Provider**: Clerk (https://clerk.com)
+- **Features**: Email/password, Google OAuth, webhooks for user sync
+- **Pages**: `/sign-in`, `/sign-up`, `/profile`
 
 ### Session Access
 
 ```typescript
 // Server Component
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth/auth-options";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function ServerPage() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    redirect('/login');
+  const { userId } = await auth();
+  if (!userId) {
+    redirect('/sign-in');
   }
-  // session.user.id, session.user.email, etc.
+  // userId available
 }
 ```
 
 ```typescript
 // Client Component
 'use client';
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 export default function ClientComponent() {
-  const { data: session, status } = useSession();
-  if (status === "loading") return <div>Loading...</div>;
-  if (status === "unauthenticated") return <div>Not logged in</div>;
-  // session.user available
+  const { isLoaded, isSignedIn, user } = useUser();
+  if (!isLoaded) return <div>Loading...</div>;
+  if (!isSignedIn) return <div>Not logged in</div>;
+  // user available
 }
 ```
 
@@ -581,7 +576,7 @@ The project is deployed on Vercel with automatic deployments from the `main` bra
 
 **Resources**:
 - Vercel (Next.js hosting)
-- Vercel Postgres (database)
+- Supabase (PostgreSQL database)
 - Vercel Blob (media storage)
 - Clerk (authentication)
 - Resend (email)
@@ -623,7 +618,7 @@ Vercel handles:
 **Project ID**: `prj_xtiKlAuT5km3KcdnDPBef28roS5n`
 
 This project is deployed on Vercel with:
-- **Vercel Postgres** for database
+- **Supabase** for PostgreSQL database
 - **Vercel Blob** for media storage
 - **Clerk** for authentication
 - **Resend** for email
@@ -765,7 +760,9 @@ await prisma.tree.delete({
 - **Next.js Docs**: https://nextjs.org/docs
 - **Prisma Docs**: https://www.prisma.io/docs
 - **MUI Docs**: https://mui.com/material-ui/
-- **NextAuth Docs**: https://next-auth.js.org/
+- **Clerk Docs**: https://clerk.com/docs
+- **Vercel Docs**: https://vercel.com/docs
+- **Supabase Docs**: https://supabase.com/docs
 
 ---
 

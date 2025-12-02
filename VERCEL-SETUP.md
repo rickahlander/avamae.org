@@ -51,8 +51,8 @@ CLERK_SECRET_KEY=sk_live_...
 CLERK_WEBHOOK_SECRET=whsec_...
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/trees
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/trees
 ```
 
 ### Email (add manually)
@@ -122,10 +122,7 @@ npm run db:seed
 ## Troubleshooting
 
 ### Build Fails with Prisma Error
-Ensure `DATABASE_URL` is set in environment variables. Vercel Postgres uses `POSTGRES_PRISMA_URL` by default, so you may need to add:
-```
-DATABASE_URL=${POSTGRES_PRISMA_URL}
-```
+Ensure `DATABASE_URL` is set in environment variables pointing to your Supabase database with pgbouncer.
 
 ### Images Not Loading
 Check that `STORAGE_TYPE=vercel-blob` is set and `BLOB_READ_WRITE_TOKEN` exists.
@@ -136,52 +133,23 @@ Check that `STORAGE_TYPE=vercel-blob` is set and `BLOB_READ_WRITE_TOKEN` exists.
 3. Check Vercel function logs for errors
 
 ### Database Connection Issues
-- Vercel Postgres requires `?pgbouncer=true` for pooled connections
-- Use `POSTGRES_PRISMA_URL` for Prisma (includes pgbouncer)
-- Use `POSTGRES_URL_NON_POOLING` for migrations
+- Supabase requires `?pgbouncer=true` for pooled connections (port 6543)
+- Use non-pooled connection (port 5432) for migrations: `npx prisma db push`
 
 ## Cost Estimate (Hobby Tier)
 
 | Service | Hobby Limit | Overage |
 |---------|-------------|---------|
 | Vercel Hosting | 100GB bandwidth | $0.15/GB |
-| Vercel Postgres | 256MB storage | Upgrade to Pro |
+| Supabase | 500MB storage, 2GB transfer | Free tier |
 | Vercel Blob | 1GB storage | $0.15/GB |
 | **Total** | **$0/month** | Pay as you go |
-
-## Migrating Data from AWS
-
-### Database Migration
-If you have existing data in AWS RDS:
-
-1. Export from RDS:
-```bash
-pg_dump -h your-rds-endpoint -U username -d avamae > backup.sql
-```
-
-2. Import to Vercel Postgres:
-```bash
-# Get connection string from Vercel dashboard (non-pooling URL)
-psql "postgres://..." < backup.sql
-```
-
-### Media Migration
-If you have existing files in S3:
-
-1. Download from S3:
-```bash
-aws --profile ahltrade s3 sync s3://your-bucket ./media-backup
-```
-
-2. Upload to Vercel Blob (you'll need a script or manual upload)
-   - Consider keeping S3 for existing files and using Vercel Blob for new uploads
-   - Or update database URLs to point to new Vercel Blob URLs after migration
 
 ## Environment Variables Summary
 
 | Variable | Required | Source |
 |----------|----------|--------|
-| `DATABASE_URL` | Yes | Vercel Postgres (use POSTGRES_PRISMA_URL) |
+| `DATABASE_URL` | Yes | Supabase (with pgbouncer) |
 | `BLOB_READ_WRITE_TOKEN` | Yes | Vercel Blob |
 | `STORAGE_TYPE` | Yes | Set to `vercel-blob` |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk Dashboard |
@@ -191,6 +159,6 @@ aws --profile ahltrade s3 sync s3://your-bucket ./media-backup
 | `NEXT_PUBLIC_APP_URL` | Yes | Your Vercel/custom domain |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Yes | `/sign-in` |
 | `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Yes | `/sign-up` |
-| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | Yes | `/dashboard` |
-| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Yes | `/dashboard` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` | Yes | `/trees` |
+| `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` | Yes | `/trees` |
 
