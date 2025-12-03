@@ -112,7 +112,7 @@ export async function POST(request: Request) {
         data: photos.map((photoUrl: string) => ({
           branchId: branch.id,
           mediaType: 'PHOTO',
-          url: photoUrl, // base64 data URL for local dev, S3 URL for production
+          url: photoUrl, // base64 data URL for local dev, Vercel Blob URL for production
           uploadedBy: userId,
         })),
       });

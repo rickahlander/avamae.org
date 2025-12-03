@@ -81,8 +81,9 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
 ### Prerequisites
 
 - **Node.js** 18+ and npm
-- **PostgreSQL** (local installation)
+- **PostgreSQL** (local installation or Supabase)
 - **Clerk Account** (for authentication)
+- **Resend Account** (for transactional email)
 - **Git**
 
 ### Local Development Setup
@@ -99,19 +100,16 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
    ```
 
 3. **Set up PostgreSQL database**
-   
-   The database should already be created with:
-   - Database: `avamae`
-   - Username: `fos_admin`
-   - Password: `fos_password`
+
+   Create a local PostgreSQL database or use Supabase for development.
 
 4. **Set up environment variables**
-   
-   Create `.env.local` with the following:
+
+   Copy `.env.example` to `.env.local` and configure:
 
    ```env
-   # Database
-   DATABASE_URL="postgresql://fos_admin:fos_password@localhost:5432/avamae?schema=public"
+   # Database (local or Supabase)
+   DATABASE_URL="postgresql://username:password@localhost:5432/avamae?schema=public"
 
    # Clerk Authentication
    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_publishable_key
@@ -119,19 +117,12 @@ Avamae represents a lost loved one as the roots and trunk of a new tree. The bra
    CLERK_WEBHOOK_SECRET=your_webhook_secret
    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/trees
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/trees
 
-   # Storage Configuration
+   # Storage Configuration (local for dev, vercel-blob for production)
    STORAGE_TYPE=local
    STORAGE_LOCAL_PATH=./public/uploads
-
-   # AWS S3 (only if STORAGE_TYPE=s3)
-   AWS_REGION=us-east-1
-   AWS_S3_BUCKET=avamae-media
-   AWS_ACCESS_KEY_ID=your_access_key
-   AWS_SECRET_ACCESS_KEY=your_secret_key
-   AWS_CLOUDFRONT_DOMAIN=xxx.cloudfront.net
 
    # Email (Resend)
    RESEND_API_KEY=re_xxxxx
@@ -234,9 +225,8 @@ avamae.org/
 │   └── seed.ts                # Seed script for branch types
 ├── scripts/
 │   └── fix-tree-slugs.ts      # Utility to fix bad slugs
-├── terraform/                 # Legacy AWS infrastructure (deprecated)
-├── Dockerfile                 # Legacy Docker config (deprecated)
 ├── middleware.ts              # Clerk authentication middleware
+├── .env.example               # Environment variables template
 └── public/                    # Static assets
 ```
 
@@ -264,11 +254,11 @@ The application uses **Clerk** for authentication with webhook-based user synchr
 
 ## Storage Configuration
 
-The application supports both local and S3 storage for media files:
+The application supports multiple storage backends for media files:
 
 - **Local Storage** (Development): Files stored in `./public/uploads`
-- **S3 Storage** (Production): Files stored in AWS S3 with CloudFront CDN
-- Configure via `STORAGE_TYPE` environment variable
+- **Vercel Blob** (Production): Files stored in Vercel Blob Storage
+- Configure via `STORAGE_TYPE` environment variable (`local` or `vercel-blob`)
 
 ## Deployment
 
@@ -289,7 +279,8 @@ Deploy to Vercel for simple, cost-effective hosting (~$0/month on Hobby tier).
 
 2. **Database (Supabase)**
    - Already configured with Supabase PostgreSQL
-   - Use `POSTGRES_PRISMA_URL` as your `DATABASE_URL`
+   - Get your connection string from Supabase Dashboard
+   - Use the connection pooler URL for production
 
 3. **Set up Vercel Blob**
    - In Vercel Dashboard → Storage → Create Database → Blob
@@ -297,11 +288,16 @@ Deploy to Vercel for simple, cost-effective hosting (~$0/month on Hobby tier).
 
 4. **Configure Environment Variables**
    ```
-   DATABASE_URL=${POSTGRES_PRISMA_URL}
+   DATABASE_URL=<your-supabase-connection-string>
    STORAGE_TYPE=vercel-blob
+   BLOB_READ_WRITE_TOKEN=<auto-configured-by-vercel>
    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
    CLERK_SECRET_KEY=sk_...
    CLERK_WEBHOOK_SECRET=whsec_...
+   NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+   NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/trees
+   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/trees
    RESEND_API_KEY=re_...
    NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
    ```
@@ -322,7 +318,7 @@ Deploy to Vercel for simple, cost-effective hosting (~$0/month on Hobby tier).
 
 **🏗️ Infrastructure:**
 - Vercel (Next.js hosting with edge functions)
-- Vercel Postgres (managed PostgreSQL)
+- Supabase (managed PostgreSQL database)
 - Vercel Blob (media storage)
 - Clerk (authentication)
 - Resend (transactional email)
@@ -398,7 +394,7 @@ npm run db:seed      # Seed database with branch types
 
 ```env
 # Database
-DATABASE_URL="postgresql://fos_admin:fos_password@localhost:5432/avamae?schema=public"
+DATABASE_URL="postgresql://username:password@localhost:5432/avamae?schema=public"
 
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_..."
@@ -406,11 +402,11 @@ CLERK_SECRET_KEY="sk_..."
 CLERK_WEBHOOK_SECRET="whsec_..."
 NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
 NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/trees"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/trees"
 
 # Storage
-STORAGE_TYPE="local"  # or "s3"
+STORAGE_TYPE="local"  # or "vercel-blob"
 STORAGE_LOCAL_PATH="./public/uploads"  # for local storage
 
 # Email (Resend)
@@ -420,14 +416,13 @@ RESEND_API_KEY="re_..."
 NEXT_PUBLIC_APP_URL="http://localhost:3000"  # or "https://avamae.org" for production
 ```
 
-### Vercel Production (auto-configured when connecting Vercel storage)
+### Vercel Production
 
 ```env
-# Vercel Postgres (auto-added)
-POSTGRES_URL="postgres://..."
-POSTGRES_PRISMA_URL="postgres://...?pgbouncer=true"
+# Supabase Database (get from Supabase Dashboard)
+DATABASE_URL="postgres://..."
 
-# Vercel Blob (auto-added)
+# Vercel Blob (auto-added when connecting Vercel Blob storage)
 BLOB_READ_WRITE_TOKEN="vercel_blob_..."
 
 # Storage type (add manually)
@@ -463,4 +458,4 @@ Built with love to honor Ava's legacy and to help families celebrate how their l
 **For detailed technical documentation, see:**
 - [DESIGN.md](./DESIGN.md) - Design philosophy and feature details
 - [CLAUDE.md](./CLAUDE.md) - AI assistant development guide
-- [terraform/README.md](./terraform/README.md) - Infrastructure documentation
+- [VERCEL-SETUP.md](./VERCEL-SETUP.md) - Deployment guide

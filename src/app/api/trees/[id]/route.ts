@@ -158,7 +158,7 @@ export async function PUT(
           data: rootPersonPhotos.map((photoUrl: string) => ({
             treeId: id,
             mediaType: 'PHOTO',
-            url: photoUrl, // base64 data URL for local dev, S3 URL for production
+            url: photoUrl, // base64 data URL for local dev, Vercel Blob URL for production
             uploadedBy: userId,
           })),
         });
