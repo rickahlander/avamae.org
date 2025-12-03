@@ -223,8 +223,6 @@ avamae.org/
 ├── prisma/
 │   ├── schema.prisma          # Database schema
 │   └── seed.ts                # Seed script for branch types
-├── scripts/
-│   └── fix-tree-slugs.ts      # Utility to fix bad slugs
 ├── middleware.ts              # Clerk authentication middleware
 ├── .env.example               # Environment variables template
 └── public/                    # Static assets
