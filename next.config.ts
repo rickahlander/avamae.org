@@ -22,7 +22,17 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "10mb",
     },
   },
-  // Note: Removed "output: standalone" - not needed for Vercel deployment
+  // Optimize serverless function size by excluding heavy packages from server bundle
+  serverExternalPackages: ["@prisma/client", "prisma"],
+  // Enable tree-shaking for MUI icons (they should only be in client bundles)
+  modularizeImports: {
+    "@mui/icons-material": {
+      transform: "@mui/icons-material/{{member}}",
+    },
+    "@mui/material": {
+      transform: "@mui/material/{{member}}",
+    },
+  },
 };
 
 export default nextConfig;

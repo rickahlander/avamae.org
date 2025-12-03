@@ -1,8 +1,10 @@
 // Prisma schema for Avamae Memorial Tree Platform
 
 generator client {
-  provider = "prisma-client-js"
-  // Note: Vercel uses native binaries, RHEL targets were for Docker/ECS
+  provider      = "prisma-client-js"
+  // Only include the binary targets needed (reduces bundle size significantly)
+  // rhel-openssl-3.0.x is for Vercel serverless functions
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
