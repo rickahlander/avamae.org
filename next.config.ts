@@ -33,6 +33,17 @@ const nextConfig: NextConfig = {
       transform: "@mui/material/{{member}}",
     },
   },
+  // Exclude build cache and unnecessary files from serverless function tracing
+  outputFileTracingExcludes: {
+    "*": [
+      ".next/cache/**/*",
+      "node_modules/@swc/core*",
+      "node_modules/@esbuild/**/*",
+      "node_modules/esbuild/**/*",
+      "node_modules/webpack/**/*",
+      "node_modules/terser/**/*",
+    ],
+  },
 };
 
 export default nextConfig;
