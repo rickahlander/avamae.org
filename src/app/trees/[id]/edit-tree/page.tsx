@@ -40,7 +40,7 @@ export default function EditTreePage() {
         const response = await fetch(`/api/trees/${treeId}`);
         if (!response.ok) throw new Error('Failed to load tree');
         const tree = await response.json();
-        
+
         setFormData({
           rootPersonName: tree.rootPersonName || '',
           rootPersonBirthDate: tree.rootPersonBirthDate ? tree.rootPersonBirthDate.split('T')[0] : '',
@@ -123,7 +123,7 @@ export default function EditTreePage() {
     }
 
     try {
-      // Upload to server (S3 in production, local in dev)
+      // Upload to server (Vercel Blob in production, local in dev)
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', 'trees');
@@ -161,7 +161,7 @@ export default function EditTreePage() {
           continue;
         }
 
-        // Upload to server (S3 in production, local in dev)
+        // Upload to server (Vercel Blob in production, local in dev)
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', 'trees');

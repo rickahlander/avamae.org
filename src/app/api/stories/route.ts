@@ -60,43 +60,59 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create story
-    const story = await prisma.story.create({
-      data: {
-        treeId,
-        branchId: branchId || null,
-        title,
-        content,
-        authorId: user.id,
-        approved: false,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatarUrl: true,
+    // Create story and media in a transaction
+    const story = await prisma.$transaction(async (tx) => {
+      const newStory = await tx.story.create({
+        data: {
+          treeId,
+          branchId: branchId || null,
+          title,
+          content,
+          authorId: user.id,
+          approved: false,
+        },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatarUrl: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    // Create story media if photos provided
-    if (photos && Array.isArray(photos) && photos.length > 0) {
-      await Promise.all(
-        photos.map((photoUrl: string) =>
-          prisma.storyMedia.create({
-            data: {
-              storyId: story.id,
-              mediaType: 'PHOTO',
-              url: photoUrl,
-              uploadedBy: user.id,
+      // Create story media if photos provided
+      if (photos && Array.isArray(photos) && photos.length > 0) {
+        await tx.storyMedia.createMany({
+          data: photos.map((photoUrl: string) => ({
+            storyId: newStory.id,
+            mediaType: 'PHOTO',
+            url: photoUrl,
+            uploadedBy: user.id,
+          })),
+        });
+
+        // Re-fetch with media
+        return await tx.story.findUnique({
+          where: { id: newStory.id },
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+              },
             },
-          })
-        )
-      );
-    }
+            media: true,
+          },
+        });
+      }
+
+      return newStory;
+    });
 
     // Get moderators to notify
     const moderators = await prisma.treeMember.findMany({
@@ -132,15 +148,23 @@ export async function POST(request: NextRequest) {
     );
 
     // Send emails asynchronously (don't wait for them)
-    Promise.all(emailPromises).catch((error) => {
-      console.error('Error sending approval notifications:', error);
+    Promise.all(emailPromises).catch((emailError) => {
+      console.error('Error sending approval notifications:', emailError);
     });
+
+    if (!story) {
+      return NextResponse.json(
+        { error: 'Failed to create or retrieve story' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(story, { status: 201 });
   } catch (error) {
-    console.error('Error creating story:', error);
+    const errorDetails = error instanceof Error ? error.message : String(error);
+    console.error('Error creating story:', errorDetails);
     return NextResponse.json(
-      { error: 'Failed to create story' },
+      { error: 'Failed to create story', details: errorDetails },
       { status: 500 }
     );
   }

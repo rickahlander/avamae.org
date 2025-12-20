@@ -14,7 +14,7 @@ export async function GET(
 
     // Check if id is a UUID or a slug
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    
+
     const tree = await prisma.tree.findUnique({
       where: isUUID ? { id } : { slug: id },
       include: {
@@ -117,99 +117,97 @@ export async function PUT(
       moderationMode,
     } = body;
 
-    // Update tree
-    const updatedTree = await prisma.tree.update({
-      where: { id },
-      data: {
-        rootPersonName,
-        rootPersonBirthDate: rootPersonBirthDate
-          ? new Date(rootPersonBirthDate)
-          : null,
-        rootPersonDeathDate: rootPersonDeathDate
-          ? new Date(rootPersonDeathDate)
-          : null,
-        rootPersonStory,
-        url,
-        rootPersonPhotoUrl,
-        moderationMode,
-      },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
+    // Use a transaction to ensure tree, media and links are updated together
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update tree
+      const updatedTree = await tx.tree.update({
+        where: { id },
+        data: {
+          rootPersonName,
+          rootPersonBirthDate: rootPersonBirthDate
+            ? new Date(rootPersonBirthDate)
+            : null,
+          rootPersonDeathDate: rootPersonDeathDate
+            ? new Date(rootPersonDeathDate)
+            : null,
+          rootPersonStory,
+          url,
+          rootPersonPhotoUrl,
+          moderationMode,
         },
-        media: true,
-      },
-    });
-
-    // Handle additional photos if provided
-    if (rootPersonPhotos && Array.isArray(rootPersonPhotos)) {
-      // Delete existing media
-      await prisma.treeMedia.deleteMany({
-        where: { treeId: id },
       });
 
-      // Create new media records
-      if (rootPersonPhotos.length > 0) {
-        await prisma.treeMedia.createMany({
-          data: rootPersonPhotos.map((photoUrl: string) => ({
-            treeId: id,
-            mediaType: 'PHOTO',
-            url: photoUrl, // base64 data URL for local dev, Vercel Blob URL for production
-            uploadedBy: userId,
-          })),
+      // 2. Handle additional photos if provided
+      if (rootPersonPhotos && Array.isArray(rootPersonPhotos)) {
+        // Delete existing media
+        await tx.treeMedia.deleteMany({
+          where: { treeId: id },
         });
-      }
-    }
 
-    // Handle social media/web links if provided
-    if (links && Array.isArray(links)) {
-      // Delete existing links
-      await prisma.treeLink.deleteMany({
-        where: { treeId: id },
+        // Create new media records
+        if (rootPersonPhotos.length > 0) {
+          await tx.treeMedia.createMany({
+            data: rootPersonPhotos.map((photoUrl: string) => ({
+              treeId: id,
+              mediaType: 'PHOTO',
+              url: photoUrl,
+              uploadedBy: userId,
+            })),
+          });
+        }
+      }
+
+      // 3. Handle social media/web links if provided
+      if (links && Array.isArray(links)) {
+        // Delete existing links
+        await tx.treeLink.deleteMany({
+          where: { treeId: id },
+        });
+
+        // Create new links
+        if (links.length > 0) {
+          await tx.treeLink.createMany({
+            data: links.map((link: { label?: string; url: string }, index: number) => ({
+              treeId: id,
+              label: link.label || null,
+              url: link.url,
+              order: index,
+            })),
+          });
+        }
+      }
+
+      // 4. Fetch updated tree with media and links
+      return await tx.tree.findUnique({
+        where: { id },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              avatarUrl: true,
+            },
+          },
+          media: true,
+          links: {
+            orderBy: {
+              order: 'asc',
+            },
+          },
+        },
       });
-
-      // Create new links
-      if (links.length > 0) {
-        await prisma.treeLink.createMany({
-          data: links.map((link: { label?: string; url: string }, index: number) => ({
-            treeId: id,
-            label: link.label || null,
-            url: link.url,
-            order: index,
-          })),
-        });
-      }
-    }
-
-    // Fetch updated tree with media and links
-    const treeWithMedia = await prisma.tree.findUnique({
-      where: { id },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
-        },
-        media: true,
-        links: {
-          orderBy: {
-            order: 'asc',
-          },
-        },
-      },
     });
 
-    return NextResponse.json(treeWithMedia);
+    if (!result) {
+      throw new Error('Failed to retrieve updated tree');
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Error updating tree:', error);
+    const errorDetails = error instanceof Error ? error.message : String(error);
+    console.error('Error updating tree:', errorDetails);
     return NextResponse.json(
-      { error: 'Failed to update tree' },
+      { error: 'Failed to update tree', details: errorDetails },
       { status: 500 }
     );
   }

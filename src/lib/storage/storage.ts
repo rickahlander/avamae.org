@@ -33,24 +33,48 @@ async function uploadToVercelBlob(
   file: File,
   folder: string
 ): Promise<UploadResult> {
-  const { put } = await import('@vercel/blob');
+  try {
+    const { put } = await import('@vercel/blob');
 
-  // Generate unique filename
-  const timestamp = Date.now();
-  const randomString = Math.random().toString(36).substring(7);
-  const extension = path.extname(file.name);
-  const filename = `${folder}/${timestamp}-${randomString}${extension}`;
+    // Generate unique filename
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(7);
+    
+    // Robust extension extraction
+    let extension = '';
+    if (file.name) {
+      extension = path.extname(file.name);
+    } else if (file.type) {
+      // Try to get extension from mime type
+      const mimeMap: Record<string, string> = {
+        'image/jpeg': '.jpg',
+        'image/png': '.png',
+        'image/gif': '.gif',
+        'image/webp': '.webp',
+      };
+      extension = mimeMap[file.type] || '';
+    }
+    
+    const filename = `${folder}/${timestamp}-${randomString}${extension}`;
 
-  // Upload to Vercel Blob
-  const blob = await put(filename, file, {
-    access: 'public',
-    addRandomSuffix: false,
-  });
+    // Convert to ArrayBuffer for better reliability across runtimes
+    const arrayBuffer = await file.arrayBuffer();
 
-  return {
-    url: blob.url,
-    key: filename,
-  };
+    // Upload to Vercel Blob
+    const blob = await put(filename, arrayBuffer, {
+      access: 'public',
+      addRandomSuffix: false,
+      contentType: file.type,
+    });
+
+    return {
+      url: blob.url,
+      key: filename,
+    };
+  } catch (error) {
+    console.error('Vercel Blob upload error:', error);
+    throw error;
+  }
 }
 
 /**

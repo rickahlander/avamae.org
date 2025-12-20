@@ -48,9 +48,19 @@ export async function POST(request: NextRequest) {
       key: result.key,
     });
   } catch (error) {
-    console.error('Error uploading file:', error);
+    const errorDetails = error instanceof Error ? error.message : String(error);
+    console.error('Error uploading file:', errorDetails);
+
+    // Check for common Vercel Blob errors
+    if (errorDetails.includes('token') || errorDetails.includes('unauthorized')) {
+      return NextResponse.json(
+        { error: 'Storage authentication failed. Please check BLOB_READ_WRITE_TOKEN.' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to upload file' },
+      { error: 'Failed to upload file', details: errorDetails },
       { status: 500 }
     );
   }

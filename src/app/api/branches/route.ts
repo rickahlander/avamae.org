@@ -77,49 +77,24 @@ export async function POST(request: Request) {
     const needsApproval =
       tree.moderationMode === 'MODERATED' && tree.ownerId !== userId;
 
-    // Create branch
-    const branch = await prisma.branch.create({
-      data: {
-        treeId,
-        parentBranchId: parentBranchId || null,
-        branchTypeId: branchType.id,
-        title,
-        description,
-        url,
-        dateOccurred: dateOccurred ? new Date(dateOccurred) : null,
-        metadata,
-        createdByUserId: userId,
-        approved: !needsApproval,
-        approvedBy: !needsApproval ? userId : null,
-        approvedAt: !needsApproval ? new Date() : null,
-      },
-      include: {
-        branchType: true,
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
+    // Use a transaction to ensure branch and media are created together
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Create branch
+      const branch = await tx.branch.create({
+        data: {
+          treeId,
+          parentBranchId: parentBranchId || null,
+          branchTypeId: branchType.id,
+          title,
+          description,
+          url,
+          dateOccurred: dateOccurred ? new Date(dateOccurred) : null,
+          metadata,
+          createdByUserId: userId,
+          approved: !needsApproval,
+          approvedBy: !needsApproval ? userId : null,
+          approvedAt: !needsApproval ? new Date() : null,
         },
-        media: true,
-      },
-    });
-
-    // Handle photos if provided
-    if (photos && Array.isArray(photos) && photos.length > 0) {
-      await prisma.branchMedia.createMany({
-        data: photos.map((photoUrl: string) => ({
-          branchId: branch.id,
-          mediaType: 'PHOTO',
-          url: photoUrl, // base64 data URL for local dev, Vercel Blob URL for production
-          uploadedBy: userId,
-        })),
-      });
-
-      // Fetch branch with media
-      const branchWithMedia = await prisma.branch.findUnique({
-        where: { id: branch.id },
         include: {
           branchType: true,
           createdBy: {
@@ -133,14 +108,43 @@ export async function POST(request: Request) {
         },
       });
 
-      return NextResponse.json(branchWithMedia, { status: 201 });
-    }
+      // 2. Handle photos if provided
+      if (photos && Array.isArray(photos) && photos.length > 0) {
+        await tx.branchMedia.createMany({
+          data: photos.map((photoUrl: string) => ({
+            branchId: branch.id,
+            mediaType: 'PHOTO',
+            url: photoUrl,
+            uploadedBy: userId,
+          })),
+        });
 
-    return NextResponse.json(branch, { status: 201 });
+        // Fetch branch again with media
+        return await tx.branch.findUnique({
+          where: { id: branch.id },
+          include: {
+            branchType: true,
+            createdBy: {
+              select: {
+                id: true,
+                name: true,
+                avatarUrl: true,
+              },
+            },
+            media: true,
+          },
+        });
+      }
+
+      return branch;
+    });
+
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
-    console.error('Error creating branch:', error);
+    const errorDetails = error instanceof Error ? error.message : String(error);
+    console.error('Error creating branch:', errorDetails);
     return NextResponse.json(
-      { error: 'Failed to create branch' },
+      { error: 'Failed to create branch', details: errorDetails },
       { status: 500 }
     );
   }

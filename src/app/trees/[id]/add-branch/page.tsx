@@ -43,12 +43,12 @@ export default function AddBranchPage() {
   useEffect(() => {
     // Load tree from API to get the name and parent branch info
     const treeId = params.id as string;
-    
+
     const fetchTree = async () => {
       try {
         const response = await fetch(`/api/trees/${treeId}`);
         if (!response.ok) throw new Error('Failed to load tree');
-        
+
         const tree = await response.json();
         setTreeName(tree.rootPersonName);
 
@@ -89,7 +89,7 @@ export default function AddBranchPage() {
           continue;
         }
 
-        // Upload to server (S3 in production, local in dev)
+        // Upload to server (Vercel Blob in production, local in dev)
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', 'branches');
