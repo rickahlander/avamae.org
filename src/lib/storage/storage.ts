@@ -17,11 +17,20 @@ export async function uploadFile(
   file: File,
   folder: string = 'uploads'
 ): Promise<UploadResult> {
-  const storageType = (process.env.STORAGE_TYPE || 'local') as StorageType;
+  // Detect environment
+  const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  const storageType = (process.env.STORAGE_TYPE || (isVercel ? 'vercel-blob' : 'local')) as StorageType;
+
+  console.log(`[Storage] Environment: ${isVercel ? 'Vercel' : 'Manual'}, Type: ${storageType}`);
 
   if (storageType === 'vercel-blob') {
     return uploadToVercelBlob(file, folder);
   } else {
+    // Only allow local upload if not on Vercel
+    if (isVercel && !process.env.STORAGE_TYPE) {
+      console.warn('[Storage] Running on Vercel but STORAGE_TYPE not set. Defaulting to vercel-blob.');
+      return uploadToVercelBlob(file, folder);
+    }
     return uploadToLocal(file, folder);
   }
 }
@@ -39,7 +48,7 @@ async function uploadToVercelBlob(
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(7);
-    
+
     // Robust extension extraction
     let extension = '';
     if (file.name) {
@@ -54,7 +63,7 @@ async function uploadToVercelBlob(
       };
       extension = mimeMap[file.type] || '';
     }
-    
+
     const filename = `${folder}/${timestamp}-${randomString}${extension}`;
 
     // Convert to ArrayBuffer for better reliability across runtimes
