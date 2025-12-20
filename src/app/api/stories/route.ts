@@ -114,6 +114,13 @@ export async function POST(request: NextRequest) {
       return newStory;
     });
 
+    if (!story) {
+      return NextResponse.json(
+        { error: 'Failed to create or retrieve story' },
+        { status: 500 }
+      );
+    }
+
     // Get moderators to notify
     const moderators = await prisma.treeMember.findMany({
       where: {
@@ -151,13 +158,6 @@ export async function POST(request: NextRequest) {
     Promise.all(emailPromises).catch((emailError) => {
       console.error('Error sending approval notifications:', emailError);
     });
-
-    if (!story) {
-      return NextResponse.json(
-        { error: 'Failed to create or retrieve story' },
-        { status: 500 }
-      );
-    }
 
     return NextResponse.json(story, { status: 201 });
   } catch (error) {
