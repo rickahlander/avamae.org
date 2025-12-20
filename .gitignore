@@ -52,4 +52,5 @@ override.tf.json
 .terraformrc
 terraform.rc
 **/.claude/*
-**/.cursor/*/public/uploads
+**/.cursor/*
+/public/uploads
