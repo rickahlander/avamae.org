@@ -17,20 +17,23 @@ export async function uploadFile(
   file: File,
   folder: string = 'uploads'
 ): Promise<UploadResult> {
-  // Detect environment
-  const isVercel = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
-  const storageType = (process.env.STORAGE_TYPE || (isVercel ? 'vercel-blob' : 'local')) as StorageType;
+  // Aggressive environment detection
+  const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL_URL || process.env.NODE_ENV === 'production';
+  const envType = process.env.STORAGE_TYPE;
 
-  console.log(`[Storage] Environment: ${isVercel ? 'Vercel' : 'Manual'}, Type: ${storageType}`);
+  // Default to vercel-blob if on Vercel or in production
+  let selectedType: StorageType = (isVercel ? 'vercel-blob' : 'local') as StorageType;
 
-  if (storageType === 'vercel-blob') {
+  // Allow explicit override
+  if (envType === 'vercel-blob' || envType === 'local') {
+    selectedType = envType as StorageType;
+  }
+
+  console.log(`[Storage] Selected: ${selectedType} (isVercel: ${isVercel}, env.STORAGE_TYPE: ${envType})`);
+
+  if (selectedType === 'vercel-blob') {
     return uploadToVercelBlob(file, folder);
   } else {
-    // Only allow local upload if not on Vercel
-    if (isVercel && !process.env.STORAGE_TYPE) {
-      console.warn('[Storage] Running on Vercel but STORAGE_TYPE not set. Defaulting to vercel-blob.');
-      return uploadToVercelBlob(file, folder);
-    }
     return uploadToLocal(file, folder);
   }
 }
