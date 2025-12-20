@@ -65,7 +65,8 @@ export default function StorySubmissionForm({
         });
 
         if (!response.ok) {
-          throw new Error('Failed to upload photo');
+          const errorData = await response.json();
+          throw new Error(errorData.details || errorData.error || 'Failed to upload photo');
         }
 
         const data = await response.json();
