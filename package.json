@@ -17,7 +17,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.35.4",
+    "@clerk/nextjs": "^6.39.2",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
@@ -25,12 +25,12 @@
     "@mui/material": "^7.3.5",
     "@mui/material-nextjs": "^7.3.5",
     "@prisma/client": "^6.1.0",
-    "@vercel/blob": "^2.0.0",
-    "next": "^15.5.6",
+    "@vercel/blob": "^2.8.1",
+    "next": "^16.4.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "resend": "^6.5.2",
-    "svix": "^1.81.0"
+    "resend": "^6.32.1",
+    "svix": "^1.99.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
@@ -38,7 +38,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.1",
     "eslint-config-next": "^15.5.6",
-    "prisma": "^6.1.0",
+    "prisma": "^6.19.3",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
